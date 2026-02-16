@@ -27,9 +27,23 @@ export const MetadataSidebar: React.FC<MetadataSidebarProps> = ({ info }) => {
   const author = info.author || info.author_email || "Unknown";
   const licenseText = info.license_expression || info.license || "";
 
-  const projectUrlEntries = Object.entries(info.project_urls ?? {}).map(
-    ([label, url]) => ({ label, url: String(url) }),
-  );
+  // project_urls may arrive as a Record<string, string> or as an array of
+  // "label, url" strings (depending on the Pulp API endpoint). Normalize both
+  // formats into a consistent { label, url } list.
+  const rawUrls = info.project_urls;
+  const projectUrlEntries: { label: string; url: string }[] = Array.isArray(
+    rawUrls,
+  )
+    ? (rawUrls as string[]).flatMap((entry) => {
+        const idx = entry.indexOf(", ");
+        return idx !== -1
+          ? [{ label: entry.slice(0, idx), url: entry.slice(idx + 2) }]
+          : [];
+      })
+    : Object.entries(rawUrls ?? {}).map(([label, url]) => ({
+        label,
+        url: String(url),
+      }));
 
   const allLinks = [
     ...(homePageUrl ? [{ label: "Homepage", url: homePageUrl }] : []),
