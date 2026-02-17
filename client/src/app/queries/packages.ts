@@ -4,10 +4,14 @@ import type {
   UniquePackageResponse,
 } from "@app/api/models";
 import { client } from "@app/axios-config/apiInit";
-import { apiPypiSimpleRead, contentPythonPackagesList } from "@app/client";
 import type { PythonPythonPackageContentResponse } from "@app/client";
+import { apiPypiSimpleRead, contentPythonPackagesList } from "@app/client";
 import { PULP_DOMAIN } from "@app/Constants";
-import { useQuery } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { mockQueryFn } from "./helpers";
 import {
@@ -70,30 +74,10 @@ export const useFetchUniquePackageMetadata = (
   },
   disableQuery = false,
 ) => {
-  const { distributionPath, packageName, packageVersion } = args;
-
-  const meta = !packageVersion
-    ? `${packageName}/json`
-    : `${packageName}/${packageVersion}/json`;
-
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: [
-      UniquePackagesQueryKey,
-      distributionPath,
-      packageName,
-      packageVersion,
-    ],
-    queryFn: () =>
-      mockQueryFn(async () => {
-        const response = await client.get({
-          url: `/api/pypi/${PULP_DOMAIN}/${distributionPath}/pypi/${meta}/`,
-          responseType: "json",
-        });
-        return response.data as UniquePackageMetadataResponse;
-      }, uniquePackageMock),
+    ...uniquePackageMetadataQueryOptions(args),
     enabled: !disableQuery,
   });
-
   return {
     pkg: data,
     isFetching: isLoading,
@@ -102,16 +86,34 @@ export const useFetchUniquePackageMetadata = (
   };
 };
 
-export const packageMetadataQueryOptions = (
-  distributionPath: string,
-  packageName: string,
-  packageVersion?: string,
-) => {
+export const useSuspenseUniquePackageMetadata = (args: {
+  distributionPath: string;
+  packageName: string;
+  packageVersion?: string;
+}) => {
+  const { data, isLoading, error, refetch } = useSuspenseQuery({
+    ...uniquePackageMetadataQueryOptions(args),
+  });
+  return {
+    pkg: data,
+    isFetching: isLoading,
+    fetchError: error as AxiosError | null,
+    refetch,
+  };
+};
+
+export const uniquePackageMetadataQueryOptions = (args: {
+  distributionPath: string;
+  packageName: string;
+  packageVersion?: string;
+}) => {
+  const { distributionPath, packageName, packageVersion } = args;
+
   const meta = !packageVersion
     ? `${packageName}/json`
     : `${packageName}/${packageVersion}/json`;
 
-  return {
+  return queryOptions({
     queryKey: [
       PackageMetadataQueryKey,
       distributionPath,
@@ -126,7 +128,7 @@ export const packageMetadataQueryOptions = (
         });
         return response.data as UniquePackageMetadataResponse;
       }, uniquePackageMock),
-  };
+  });
 };
 
 export const useFetchPackageById = (

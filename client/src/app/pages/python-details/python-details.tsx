@@ -20,8 +20,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeftIcon, CopyIcon } from "@patternfly/react-icons";
 import { DocumentMetadata } from "@app/components/DocumentMetadata";
 import {
-  useFetchUniquePackageMetadata,
   useFetchPackageContent,
+  useSuspenseUniquePackageMetadata,
 } from "@app/queries/packages";
 import { PathParam, useRouteParams } from "@app/Routes";
 import { OverviewTab, VersionsTab, FilesTab } from "./components";
@@ -35,7 +35,7 @@ export const PythonDetails: React.FC = () => {
 
   const [activeTabKey, setActiveTabKey] = React.useState<number>(0);
 
-  const { pkg, isFetching } = useFetchUniquePackageMetadata({
+  const { pkg, isFetching } = useSuspenseUniquePackageMetadata({
     distributionPath: distributionBasePath,
     packageName,
     packageVersion: versionParam,
