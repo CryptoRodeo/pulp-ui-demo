@@ -1,4 +1,5 @@
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   Divider,
@@ -19,12 +20,20 @@ import { CardList } from "./components/CardList";
 import { DistributionSelector } from "./components/DistributionsSelector";
 
 export const PythonList: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const distributionParam = searchParams.get("distribution");
+
   const { distributions } = useFetchDistributions();
-  const [selectedDistribution, setSelectedDistribution] =
-    React.useState<DistributionResponse | null>(null);
-  const onDistributionSelected = (value: DistributionResponse) => {
-    setSelectedDistribution(value);
-  };
+  const selectedDistribution = React.useMemo(() => {
+    return distributions.find((d) => d.name === distributionParam) ?? null;
+  }, [distributions, distributionParam]);
+
+  const onDistributionSelected = React.useCallback(
+    (value: DistributionResponse) => {
+      setSearchParams({ distribution: value.name }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   return (
     <>
