@@ -25,7 +25,7 @@ export const PythonList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const distributionParam = searchParams.get("distribution");
 
-  const { distributions } = useFetchDistributions();
+  const { distributions, isFetching, fetchError } = useFetchDistributions();
   const selectedDistribution = React.useMemo(() => {
     return distributions.find((d) => d.name === distributionParam) ?? null;
   }, [distributions, distributionParam]);
