@@ -1,8 +1,9 @@
-import type React from "react";
+import React from "react";
 
 import { AboutModal, Content, ContentVariants } from "@patternfly/react-core";
 import spacing from "@patternfly/react-styles/css/utilities/Spacing/spacing";
 
+import { ThemeContext } from "@app/components/ThemeContext";
 import ENV from "@app/env";
 import useBranding from "@app/hooks/useBranding";
 
@@ -18,6 +19,7 @@ export const AboutApp: React.FC<IButtonAboutAppProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { isDark } = React.useContext(ThemeContext);
   const { about } = useBranding();
 
   return (
@@ -26,7 +28,11 @@ export const AboutApp: React.FC<IButtonAboutAppProps> = ({
       onClose={onClose}
       productName={about.displayName}
       brandImageAlt="Logo"
-      brandImageSrc={about.imageSrc ?? TRANSPARENT_1x1_GIF}
+      brandImageSrc={
+        (!isDark ? about.imageSrc : about.darkModeImageSrc) ??
+        about.imageSrc ??
+        TRANSPARENT_1x1_GIF
+      }
       trademark={`COPYRIGHT © 2026, ${new Date().getFullYear()}`}
     >
       <Content>

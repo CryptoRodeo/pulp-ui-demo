@@ -1,5 +1,4 @@
-import type React from "react";
-import { useReducer, useState } from "react";
+import React, { useReducer, useState } from "react";
 
 import {
   Brand,
@@ -30,12 +29,15 @@ import HelpIcon from "@patternfly/react-icons/dist/esm/icons/help-icon";
 import BarsIcon from "@patternfly/react-icons/dist/js/icons/bars-icon";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/js/icons/external-link-alt-icon";
 
+import { ThemeSelector } from "@app/components/ThemeSelector";
 import useBranding from "@app/hooks/useBranding";
-import { DarkModeToggle } from "@app/components/DarkModeToggle";
+import { ThemeContext } from "@app/components/ThemeContext";
 
 import { AboutApp } from "./about";
 
 export const HeaderApp: React.FC = () => {
+  const { isDark } = React.useContext(ThemeContext);
+
   const {
     masthead: { leftBrand, leftTitle, rightBrand, supportUrl },
   } = useBranding();
@@ -72,7 +74,10 @@ export const HeaderApp: React.FC = () => {
                 <SplitItem>
                   {leftBrand ? (
                     <Brand
-                      src={leftBrand.src}
+                      src={
+                        (!isDark ? leftBrand.src : leftBrand.darkModeSrc) ??
+                        leftBrand.src
+                      }
                       alt={leftBrand.alt}
                       heights={{ default: leftBrand.height }}
                     />
@@ -117,7 +122,7 @@ export const HeaderApp: React.FC = () => {
                 }}
               >
                 <ToolbarItem>
-                  <DarkModeToggle />
+                  <ThemeSelector />
                 </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
@@ -173,7 +178,7 @@ export const HeaderApp: React.FC = () => {
                 visibility={{ lg: "hidden" }}
               >
                 <ToolbarItem>
-                  <DarkModeToggle />
+                  <ThemeSelector />
                 </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
