@@ -24,6 +24,8 @@ export const Paths = {
   pythonDetails: `/:${PathParam.DISTRIBUTION_BASE_PATH}/:${PathParam.PYTHON_ID}`,
 } as const;
 
+export const distributionBasePathQueryParam = "distribution";
+
 export const usePathFromParams = (
   params: Params<string>,
   pathParam: PathParamType,

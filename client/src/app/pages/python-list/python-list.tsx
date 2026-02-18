@@ -12,6 +12,7 @@ import {
 } from "@patternfly/react-core";
 import CubesIcon from "@patternfly/react-icons/dist/esm/icons/cubes-icon";
 
+import { distributionBasePathQueryParam } from "@app/Routes";
 import type { DistributionResponse } from "@app/client";
 import { DocumentMetadata } from "@app/components/DocumentMetadata";
 import { LoadingDataEmptyState } from "@app/components/LoadingDataEmptyState";
@@ -23,16 +24,16 @@ import { DistributionSelector } from "./components/DistributionsSelector";
 
 export const PythonList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const distributionParam = searchParams.get("distribution");
+  const distributionParam = searchParams.get(distributionBasePathQueryParam);
 
   const { distributions, isFetching, fetchError } = useFetchDistributions();
   const selectedDistribution = React.useMemo(() => {
-    return distributions.find((d) => d.name === distributionParam) ?? null;
+    return distributions.find((d) => d.base_path === distributionParam) ?? null;
   }, [distributions, distributionParam]);
 
   const onDistributionSelected = React.useCallback(
     (value: DistributionResponse) => {
-      setSearchParams({ distribution: value.name }, { replace: true });
+      setSearchParams({ distribution: value.base_path }, { replace: true });
     },
     [setSearchParams],
   );

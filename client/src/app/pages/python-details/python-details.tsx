@@ -1,8 +1,11 @@
 import React from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import {
-  Button,
+  Breadcrumb,
+  BreadcrumbItem,
   Bullseye,
+  Button,
   Flex,
   FlexItem,
   Label,
@@ -16,20 +19,26 @@ import {
   TabTitleText,
   Title,
 } from "@patternfly/react-core";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeftIcon, CopyIcon } from "@patternfly/react-icons";
+import { CopyIcon } from "@patternfly/react-icons";
+
 import { DocumentMetadata } from "@app/components/DocumentMetadata";
 import {
   useFetchPackageContent,
   useSuspenseUniquePackageMetadata,
 } from "@app/queries/packages";
-import { PathParam, useRouteParams } from "@app/Routes";
-import { OverviewTab, VersionsTab, FilesTab } from "./components";
+import {
+  distributionBasePathQueryParam,
+  PathParam,
+  Paths,
+  useRouteParams,
+} from "@app/Routes";
+
+import { FilesTab, OverviewTab, VersionsTab } from "./components";
 
 export const PythonDetails: React.FC = () => {
   const distributionBasePath = useRouteParams(PathParam.DISTRIBUTION_BASE_PATH);
   const packageName = useRouteParams(PathParam.PYTHON_ID);
-  const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
   const versionParam = searchParams.get("version") ?? undefined;
 
@@ -119,15 +128,22 @@ export const PythonDetails: React.FC = () => {
   return (
     <>
       <DocumentMetadata title={info.name ?? "Python"} />
+      <PageSection type="breadcrumb">
+        <Breadcrumb>
+          <BreadcrumbItem>
+            <Link
+              to={{
+                pathname: Paths.python,
+                search: `?${distributionBasePathQueryParam}=${distributionBasePath}`,
+              }}
+            >
+              Packages
+            </Link>
+          </BreadcrumbItem>
+          <BreadcrumbItem isActive>Package details</BreadcrumbItem>
+        </Breadcrumb>
+      </PageSection>
       <PageSection variant={PageSectionVariants.default}>
-        <Button
-          variant="link"
-          icon={<ArrowLeftIcon />}
-          onClick={() => navigate("/")}
-          style={{ paddingLeft: 0, marginBottom: "1rem" }}
-        >
-          Back to Packages
-        </Button>
         <Flex
           justifyContent={{ default: "justifyContentSpaceBetween" }}
           alignItems={{ default: "alignItemsCenter" }}
