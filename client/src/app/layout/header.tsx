@@ -31,6 +31,7 @@ import BarsIcon from "@patternfly/react-icons/dist/js/icons/bars-icon";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/js/icons/external-link-alt-icon";
 
 import useBranding from "@app/hooks/useBranding";
+import { DarkModeToggle } from "@app/components/DarkModeToggle";
 
 import { AboutApp } from "./about";
 
@@ -116,6 +117,9 @@ export const HeaderApp: React.FC = () => {
                 }}
               >
                 <ToolbarItem>
+                  <DarkModeToggle />
+                </ToolbarItem>
+                <ToolbarItem>
                   <Dropdown
                     isOpen={isHelpDropdownOpen}
                     onSelect={onHelpDropdownToggle}
@@ -168,6 +172,9 @@ export const HeaderApp: React.FC = () => {
                 gap={{ default: "gapNone", md: "gapMd" }}
                 visibility={{ lg: "hidden" }}
               >
+                <ToolbarItem>
+                  <DarkModeToggle />
+                </ToolbarItem>
                 <ToolbarItem>
                   <Dropdown
                     isOpen={isKebabDropdownOpen}
