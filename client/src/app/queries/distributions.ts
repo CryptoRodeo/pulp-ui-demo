@@ -27,7 +27,7 @@ export const useFetchDistributions = (disableQuery = false) => {
   });
 
   return {
-    distributions: data?.results || [],
+    distributions: Array.isArray(data?.results) ? data.results : [],
     isFetching: isLoading,
     fetchError: error as AxiosError | null,
     refetch,

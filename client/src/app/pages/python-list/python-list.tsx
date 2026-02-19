@@ -2,6 +2,7 @@ import React from "react";
 import { useSearchParams } from "react-router-dom";
 
 import {
+  ClipboardCopy,
   Divider,
   EmptyState,
   EmptyStateActions,
@@ -60,6 +61,17 @@ export const PythonList: React.FC = () => {
               <Title headingLevel="h1" size="2xl">
                 {selectedDistribution.name}
               </Title>
+              {selectedDistribution.base_url && (
+                <ClipboardCopy
+                  className="pf-v6-u-mt-sm"
+                  isReadOnly
+                  hoverTip="Copy"
+                  clickTip="Copied"
+                  variant="inline-compact"
+                >
+                  {selectedDistribution.base_url}
+                </ClipboardCopy>
+              )}
             </PageSection>
             <PageSection>
               <CardList distribution={selectedDistribution} />

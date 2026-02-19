@@ -42,24 +42,34 @@ import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { WithPackage } from "./WithPackage";
 
 type ICardListProps = {
-  distribution: DistributionResponse;
+  /** When null, toolbar + filters are still shown and the list area shows an error state */
+  distribution: DistributionResponse | null;
+  /** Unique table name for filter/sort/pagination state (per page). Default: "python-table" */
+  tableName?: string;
 };
 
-export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
+export const CardList: React.FC<ICardListProps> = ({
+  distribution,
+  tableName = "python-table",
+}) => {
   const navigate = useNavigate();
-  const { packages, isFetching, fetchError } = useFetchUniquePackages({
-    distributionPath: distribution.base_path,
-  });
+  const { packages, isFetching, fetchError } = useFetchUniquePackages(
+    { distributionPath: distribution?.base_path ?? "" },
+    !distribution,
+  );
+  const effectivePackages = distribution ? packages : [];
+  const effectiveFetchError = distribution ? fetchError : true;
+  const effectiveIsFetching = !!distribution && isFetching;
 
   // Sorting
   const [isSortByOpen, setIsSortByOpen] = React.useState<boolean>(false);
 
   // Table
   const tableControls = useLocalTableControls({
-    tableName: "python-table",
+    tableName,
     idProperty: "name",
-    items: packages,
-    isLoading: isFetching,
+    items: effectivePackages,
+    isLoading: effectiveIsFetching,
     columnNames: {
       name: "Name",
     },
@@ -102,6 +112,7 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
   } = tableControls;
 
   const onClickCard = (packageName: string) => {
+    if (!distribution) return;
     navigate(
       generatePath(Paths.pythonDetails, {
         distributionBasePath: distribution.base_path,
@@ -115,7 +126,11 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
       <StackItem>
         <Toolbar {...toolbarProps}>
           <ToolbarContent>
-            <FilterToolbar showFiltersSideBySide {...filterToolbarProps} />
+            <FilterToolbar
+              showFiltersSideBySide
+              filterGroupBreakpoint="sm"
+              {...filterToolbarProps}
+            />
             <ToolbarItem variant="separator" />
             <ToolbarItem>
               Sort by:
@@ -150,7 +165,7 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
                 <SelectList>
                   {sortableColumns?.map((e) => (
                     <SelectOption key={e} value={e}>
-                      {toCamelCase(activeSort?.columnKey ?? "")}
+                      {toCamelCase(e)}
                     </SelectOption>
                   ))}
                 </SelectList>
@@ -158,7 +173,7 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
             </ToolbarItem>
             <ToolbarItem {...paginationToolbarItemProps}>
               <SimplePagination
-                idPrefix="python-list"
+                idPrefix={tableName}
                 isTop
                 paginationProps={paginationProps}
               />
@@ -169,19 +184,20 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
       <StackItem>
         <Stack aria-label="python-list" hasGutter>
           <ConditionalDataListBody
-            isLoading={isFetching}
-            isError={!!fetchError}
-            isNoData={packages.length === 0}
+            isLoading={effectiveIsFetching}
+            isError={!!effectiveFetchError}
+            isNoData={effectivePackages.length === 0}
           >
             {currentPageItems?.map((item, rowIndex) => {
               return (
-                <StackItem
-                  key={`${item.name}`}
-                  aria-labelledby={`Item-${rowIndex}`}
-                >
-                  <Card isCompact isClickable>
-                    <WithPackage
-                      distribution={distribution}
+                distribution && (
+                  <StackItem
+                    key={`${item.name}`}
+                    aria-labelledby={`Item-${rowIndex}`}
+                  >
+                    <Card isCompact isClickable>
+                      <WithPackage
+                        distribution={distribution}
                       packageName={item.name}
                     >
                       {({ pkg, isFetching }) => {
@@ -282,9 +298,10 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
                           </>
                         );
                       }}
-                    </WithPackage>
-                  </Card>
-                </StackItem>
+                      </WithPackage>
+                    </Card>
+                  </StackItem>
+                )
               );
             })}
           </ConditionalDataListBody>
@@ -293,7 +310,7 @@ export const CardList: React.FC<ICardListProps> = ({ distribution }) => {
       <StackItem>
         <Bullseye>
           <SimplePagination
-            idPrefix="python-list"
+            idPrefix={tableName}
             isTop={false}
             paginationProps={paginationProps}
           />

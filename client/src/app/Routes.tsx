@@ -8,6 +8,9 @@ import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { queryClient } from "./queries/config";
 import { uniquePackageMetadataQueryOptions } from "./queries/packages";
 
+const Landing = lazy(() => import("./pages/landing"));
+const TrustedLibraries = lazy(() => import("./pages/trusted-libraries"));
+const RedHatAIComponents = lazy(() => import("./pages/redhat-ai-components"));
 const PythonList = lazy(() => import("./pages/python-list"));
 const PythonDetails = lazy(() => import("./pages/python-details"));
 const NotFound = lazy(() => import("./pages/not-found"));
@@ -20,7 +23,14 @@ export const PathParam = {
 type PathParamType = (typeof PathParam)[keyof typeof PathParam];
 
 export const Paths = {
-  python: "/",
+  /** Main landing page with product links */
+  landing: "/",
+  /** Trusted Libraries (calunga-dev) distribution */
+  trustedLibraries: "/trusted-libraries",
+  /** Red Hat AI Components (AIPCC) distributions grid */
+  redHatAIComponents: "/redhat-ai-components",
+  /** Python package list (used with query param or from product pages) */
+  python: "/python",
   pythonDetails: `/:${PathParam.DISTRIBUTION_BASE_PATH}/:${PathParam.PYTHON_ID}`,
 } as const;
 
@@ -45,6 +55,30 @@ export const AppRoutes = createBrowserRouter(
       path: "/",
       element: <App />,
       children: [
+        {
+          index: true,
+          element: (
+            <LazyRouteElement identifier="landing" component={<Landing />} />
+          ),
+        },
+        {
+          path: "trusted-libraries",
+          element: (
+            <LazyRouteElement
+              identifier="trusted-libraries"
+              component={<TrustedLibraries />}
+            />
+          ),
+        },
+        {
+          path: "redhat-ai-components",
+          element: (
+            <LazyRouteElement
+              identifier="redhat-ai-components"
+              component={<RedHatAIComponents />}
+            />
+          ),
+        },
         {
           path: Paths.python,
           element: (

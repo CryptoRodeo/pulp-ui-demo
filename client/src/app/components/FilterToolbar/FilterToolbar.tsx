@@ -144,6 +144,8 @@ export interface IFilterToolbarProps<TItem, TFilterCategoryKey extends string> {
   pagination?: React.JSX.Element;
   showFiltersSideBySide?: boolean;
   isDisabled?: boolean;
+  /** Breakpoint below which filter group collapses to icon. Use "sm" to keep search bar visible (expanded) on more viewports. Default "2xl". */
+  filterGroupBreakpoint?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
 export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
@@ -153,6 +155,7 @@ export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
   pagination,
   showFiltersSideBySide = false,
   isDisabled = false,
+  filterGroupBreakpoint = "2xl",
 }: React.PropsWithChildren<
   IFilterToolbarProps<TItem, TFilterCategoryKey>
 >): React.JSX.Element | null => {
@@ -233,7 +236,7 @@ export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
       <ToolbarToggleGroup
         variant="filter-group"
         toggleIcon={<FilterIcon />}
-        breakpoint="2xl"
+        breakpoint={filterGroupBreakpoint}
         gap={showFiltersSideBySide ? { default: "gapMd" } : undefined}
       >
         {!showFiltersSideBySide && (

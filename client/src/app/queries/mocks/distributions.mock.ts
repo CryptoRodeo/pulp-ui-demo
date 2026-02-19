@@ -1,10 +1,27 @@
 import type { PaginatedDistributionResponseList } from "@app/client";
 
 export const distributionsMock: PaginatedDistributionResponseList = {
-  count: 69,
+  count: 70,
   next: undefined,
   previous: undefined,
   results: [
+    {
+      pulp_href:
+        "/api/pulp/calunga-ui-dev/api/v3/distributions/python/pypi/calunga-dev/",
+      prn: "prn:python.pythondistribution:calunga-dev",
+      pulp_created: "2026-02-05T17:10:59.745424Z",
+      pulp_last_updated: "2026-02-05T17:10:59.745439Z",
+      base_path: "calunga-dev",
+      base_url:
+        "https://packages.redhat.com/api/pulp-content/calunga-ui-dev/calunga-dev/",
+      content_guard: undefined,
+      no_content_change_since: undefined,
+      hidden: false,
+      pulp_labels: {},
+      name: "calunga-dev",
+      repository:
+        "/api/pulp/calunga-ui-dev/api/v3/repositories/python/python/calunga-dev/",
+    },
     {
       pulp_href:
         "/api/pulp/calunga-ui-dev/api/v3/distributions/python/pypi/019c2ec9-23a0-7b47-af9c-423a8fb17a4b/",
