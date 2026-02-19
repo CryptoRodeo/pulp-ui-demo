@@ -2,21 +2,56 @@ import type { DistributionResponse } from "@app/client";
 
 import { CALUNGA_DEV_BASE_PATH } from "@app/Constants";
 
-/** Whether this distribution is the single Trusted Libraries (calunga-dev) product */
+/** Display name for the Trusted Libraries product in the API */
+export const TRUSTED_LIBRARIES_DISPLAY_NAME = "calunga-dev";
+
+/** Base path used for the Trusted Libraries package index when you "Browse packages" (matches working view) */
+export const TRUSTED_LIBRARIES_BASE_PATH = "main";
+
+/**
+ * True if this distribution is the Trusted Libraries (calunga-dev) product.
+ * Excludes it from Red Hat AI Components so it only appears on the Trusted Libraries page.
+ * Covers both API shapes: base_path "calunga-dev" and name "calunga-dev" with base_path "main".
+ */
 export function isTrustedLibrariesDistribution(
   d: DistributionResponse,
 ): boolean {
-  return d.base_path === CALUNGA_DEV_BASE_PATH;
+  if (d.base_path === CALUNGA_DEV_BASE_PATH) return true;
+  return (
+    d.name === TRUSTED_LIBRARIES_DISPLAY_NAME &&
+    d.base_path === TRUSTED_LIBRARIES_BASE_PATH
+  );
 }
 
-/** Trusted Libraries: single calunga-dev distribution */
+/** Trusted Libraries: distributions that represent the calunga-dev product (0, 1, or 2 from API) */
 export function getTrustedLibrariesDistributions(
   distributions: DistributionResponse[],
 ): DistributionResponse[] {
   return distributions.filter(isTrustedLibrariesDistribution);
 }
 
-/** Red Hat AI Components: all AIPCC distributions (non–calunga-dev) */
+/**
+ * Distribution to use for the Trusted Libraries page. Prefers the distribution that
+ * actually serves the package list: name "calunga-dev" with base_path "main" (the one
+ * you get when clicking "Browse packages" on calunga-dev). Falls back to base_path
+ * "calunga-dev" or a synthetic distribution so packages still load.
+ */
+export function getTrustedLibrariesDefaultDistribution(
+  distributions: DistributionResponse[],
+): DistributionResponse {
+  const byMain = distributions.find(
+    (d) => d.name === TRUSTED_LIBRARIES_DISPLAY_NAME && d.base_path === TRUSTED_LIBRARIES_BASE_PATH,
+  );
+  if (byMain) return byMain;
+  const byCalungaDev = getTrustedLibrariesDistributions(distributions)[0];
+  if (byCalungaDev) return byCalungaDev;
+  return {
+    base_path: TRUSTED_LIBRARIES_BASE_PATH,
+    name: TRUSTED_LIBRARIES_DISPLAY_NAME,
+  } as DistributionResponse;
+}
+
+/** Red Hat AI Components: all distributions except Trusted Libraries (calunga-dev never included) */
 export function getAIPCCDistributions(
   distributions: DistributionResponse[],
 ): DistributionResponse[] {

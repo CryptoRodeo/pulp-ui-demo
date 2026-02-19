@@ -1,5 +1,5 @@
 import React from "react";
-import { generatePath, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   Bullseye,
@@ -23,6 +23,7 @@ import {
   Toolbar,
   ToolbarContent,
   ToolbarItem,
+  Tooltip,
   Truncate,
   type MenuToggleElement,
 } from "@patternfly/react-core";
@@ -46,13 +47,26 @@ type ICardListProps = {
   distribution: DistributionResponse | null;
   /** Unique table name for filter/sort/pagination state (per page). Default: "python-table" */
   tableName?: string;
+  /** If provided, card click and package links use this path instead of Paths.pythonDetails. */
+  getPackageDetailPath?: (
+    distribution: DistributionResponse,
+    packageName: string,
+  ) => string;
 };
 
 export const CardList: React.FC<ICardListProps> = ({
   distribution,
   tableName = "python-table",
+  getPackageDetailPath,
 }) => {
   const navigate = useNavigate();
+  const [copiedPackageName, setCopiedPackageName] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (copiedPackageName === null) return;
+    const t = setTimeout(() => setCopiedPackageName(null), 1500);
+    return () => clearTimeout(t);
+  }, [copiedPackageName]);
+
   const { packages, isFetching, fetchError } = useFetchUniquePackages(
     { distributionPath: distribution?.base_path ?? "" },
     !distribution,
@@ -111,14 +125,23 @@ export const CardList: React.FC<ICardListProps> = ({
     sortState: { activeSort, setActiveSort },
   } = tableControls;
 
+  const getDetailPath = (packageName: string) => {
+    if (!distribution) return "";
+    if (getPackageDetailPath) return getPackageDetailPath(distribution, packageName);
+    return `/${distribution.base_path}/${packageName}`;
+  };
+
+  const handleCopy = (packageName: string, e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(`pip install ${packageName}`);
+    setCopiedPackageName(packageName);
+  };
+
   const onClickCard = (packageName: string) => {
     if (!distribution) return;
-    navigate(
-      generatePath(Paths.pythonDetails, {
-        distributionBasePath: distribution.base_path,
-        pythonId: packageName,
-      }),
-    );
+    const path = getDetailPath(packageName);
+    if (path) navigate(path);
   };
 
   return (
@@ -284,14 +307,34 @@ export const CardList: React.FC<ICardListProps> = ({
                                   </LoadingWrapper>
                                 </FlexItem>
                                 <FlexItem align={{ default: "alignRight" }}>
-                                  <ClipboardCopy
-                                    isReadOnly
-                                    hoverTip="Copy"
-                                    clickTip="Copied"
-                                    variant="inline-compact"
+                                  <Tooltip
+                                    content={
+                                      copiedPackageName === item.name
+                                        ? "Copied"
+                                        : "Copy"
+                                    }
                                   >
-                                    pip install {item.name ?? ""}
-                                  </ClipboardCopy>
+                                    <div
+                                      style={{ position: "relative", zIndex: 1 }}
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={(e) => handleCopy(item.name ?? "", e)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          handleCopy(item.name ?? "", e);
+                                        }
+                                      }}
+                                    >
+                                      <ClipboardCopy
+                                        isReadOnly
+                                        hoverTip=""
+                                        clickTip=""
+                                        variant="inline-compact"
+                                      >
+                                        pip install {item.name ?? ""}
+                                      </ClipboardCopy>
+                                    </div>
+                                  </Tooltip>
                                 </FlexItem>
                               </Flex>
                             </CardFooter>

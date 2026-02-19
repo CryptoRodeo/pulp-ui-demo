@@ -7,28 +7,28 @@ import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { LoadingDataEmptyState } from "@app/components/LoadingDataEmptyState";
 import { useFetchDistributions } from "@app/queries/distributions";
 import { useFetchUniquePackages } from "@app/queries/packages";
-import { getTrustedLibrariesDistributions } from "@app/utils/distributions";
+import { getTrustedLibrariesPackageDetailPath } from "@app/Routes";
+import { getTrustedLibrariesDefaultDistribution } from "@app/utils/distributions";
 
 import { CardList } from "@app/pages/python-list/components/CardList";
 import { DistributionDetailCards } from "@app/pages/python-list/components/DistributionDetailCards";
-import { DistributionSelector } from "@app/pages/python-list/components/DistributionsSelector";
 
-/** Inner content; any throw here (including in hooks) is caught by parent ErrorBoundary */
+/**
+ * Trusted Libraries: same content as the Python list when calunga-dev is selected,
+ * with calunga-dev pre-selected (no distribution dropdown).
+ */
 export const TrustedLibrariesContent: React.FC = () => {
   const { distributions, isFetching, fetchError } = useFetchDistributions();
-  const trustedDistributions = React.useMemo(
-    () => getTrustedLibrariesDistributions(distributions),
+  const selectedDistribution = React.useMemo(
+    () => getTrustedLibrariesDefaultDistribution(distributions),
     [distributions],
   );
-  const selectedDistribution = trustedDistributions[0] ?? null;
 
   const { packages } = useFetchUniquePackages(
-    { distributionPath: selectedDistribution?.base_path ?? "" },
-    !selectedDistribution,
+    { distributionPath: selectedDistribution.base_path },
+    false,
   );
-  const packageCount = selectedDistribution ? packages.length : null;
-
-  const onDistributionSelected = React.useCallback(() => {}, []);
+  const packageCount = packages.length;
 
   return (
     <>
@@ -39,16 +39,8 @@ export const TrustedLibrariesContent: React.FC = () => {
         isFetchingState={<LoadingDataEmptyState />}
       >
         <PageSection>
-          <DistributionSelector
-            distributions={trustedDistributions}
-            selected={selectedDistribution}
-            onChange={onDistributionSelected}
-          />
-        </PageSection>
-        <Divider />
-        <PageSection>
           <Title headingLevel="h1" size="2xl">
-            {selectedDistribution?.name ?? "calunga-dev"}
+            {selectedDistribution.name}
           </Title>
           <DistributionDetailCards
             distribution={selectedDistribution}
@@ -56,10 +48,14 @@ export const TrustedLibrariesContent: React.FC = () => {
             showBaseImageUrl={false}
           />
         </PageSection>
+        <Divider />
         <PageSection>
           <CardList
             distribution={selectedDistribution}
             tableName="trusted-libraries-table"
+            getPackageDetailPath={(_dist, packageName) =>
+              getTrustedLibrariesPackageDetailPath(packageName)
+            }
           />
         </PageSection>
       </LoadingWrapper>

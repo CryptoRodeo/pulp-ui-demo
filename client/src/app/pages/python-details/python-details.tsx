@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 
 import {
   Breadcrumb,
@@ -26,18 +26,23 @@ import {
   useFetchPackageContent,
   useSuspenseUniquePackageMetadata,
 } from "@app/queries/packages";
-import {
-  distributionBasePathQueryParam,
-  PathParam,
-  Paths,
-  useRouteParams,
-} from "@app/Routes";
+import { PathParam, Paths } from "@app/Routes";
+import { TRUSTED_LIBRARIES_BASE_PATH } from "@app/utils/distributions";
 
 import { FilesTab, OverviewTab, VersionsTab } from "./components";
 
 export const PythonDetails: React.FC = () => {
-  const distributionBasePath = useRouteParams(PathParam.DISTRIBUTION_BASE_PATH);
-  const packageName = useRouteParams(PathParam.PYTHON_ID);
+  const location = useLocation();
+  const pathname = location.pathname;
+  const params = useParams();
+  const packageNameParam = params[PathParam.PYTHON_ID];
+  const distributionParam = params[PathParam.DISTRIBUTION_BASE_PATH];
+
+  const isTrustedLibrariesRoute = pathname.startsWith("/trusted-libraries");
+  const packageName = packageNameParam ?? "";
+  const distributionBasePath = isTrustedLibrariesRoute
+    ? TRUSTED_LIBRARIES_BASE_PATH
+    : (distributionParam ?? "");
 
   const [searchParams] = useSearchParams();
   const versionParam = searchParams.get("version") ?? undefined;
@@ -132,15 +137,18 @@ export const PythonDetails: React.FC = () => {
         <Breadcrumb>
           <BreadcrumbItem>
             <Link
-              to={{
-                pathname: Paths.python,
-                search: `?${distributionBasePathQueryParam}=${distributionBasePath}`,
-              }}
+              to={
+                pathname.startsWith("/trusted-libraries")
+                  ? Paths.trustedLibraries
+                  : pathname.startsWith("/redhat-ai-components")
+                    ? Paths.redHatAIComponents
+                    : Paths.landing
+              }
             >
               Packages
             </Link>
           </BreadcrumbItem>
-          <BreadcrumbItem isActive>Package details</BreadcrumbItem>
+          <BreadcrumbItem isActive>{info.name}</BreadcrumbItem>
         </Breadcrumb>
       </PageSection>
       <PageSection variant={PageSectionVariants.default}>
@@ -225,7 +233,7 @@ export const PythonDetails: React.FC = () => {
                 <VersionsTab
                   releases={releases ?? {}}
                   currentVersion={currentVersion}
-                  distributionBasePath={distributionBasePath}
+                  packageDetailPath={pathname}
                   packageName={info.name ?? ""}
                 />
               </TabContentBody>

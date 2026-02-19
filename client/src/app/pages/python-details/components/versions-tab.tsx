@@ -8,8 +8,7 @@ import {
   EmptyStateBody,
 } from "@patternfly/react-core";
 import { Table, Thead, Tr, Th, Tbody, Td } from "@patternfly/react-table";
-import { generatePath, useNavigate } from "react-router-dom";
-import { Paths } from "@app/Routes";
+import { useNavigate } from "react-router-dom";
 import type { UniquePackageMetadataResponse } from "@app/api/models";
 import prettyBytes from "pretty-bytes";
 
@@ -18,32 +17,35 @@ type ReleaseFiles = NonNullable<UniquePackageMetadataResponse["releases"]>;
 interface VersionsTabProps {
   releases: ReleaseFiles;
   currentVersion: string;
-  distributionBasePath: string;
+  /** Base path for this package detail (e.g. /trusted-libraries/Django or /redhat-ai-components/rhoai-3.0-ubi9/requests). Version links append ?version=... */
+  packageDetailPath: string;
   packageName: string;
 }
 
 export const VersionsTab: React.FC<VersionsTabProps> = ({
   releases,
   currentVersion,
-  distributionBasePath,
+  packageDetailPath,
   packageName,
 }) => {
   const navigate = useNavigate();
 
   const versionEntries = useMemo(() => {
-    return Object.entries(releases)
-      .map(([version, files]) => {
-        const firstFile = files[0];
-        const totalSize = files.reduce((sum, f) => sum + (f.size ?? 0), 0);
-        return {
-          version,
-          pythonVersion: firstFile?.python_version ?? "N/A",
-          requiresPython: firstFile?.requires_python ?? "N/A",
-          uploadDate: firstFile?.upload_time_iso_8601 ?? firstFile?.upload_time,
-          size: totalSize,
-        };
-      })
-      .reverse();
+    const entries = Object.entries(releases).map(([version, files]) => {
+      const firstFile = files[0];
+      const totalSize = files.reduce((sum, f) => sum + (f.size ?? 0), 0);
+      const uploadDate = firstFile?.upload_time_iso_8601 ?? firstFile?.upload_time;
+      return {
+        version,
+        pythonVersion: firstFile?.python_version ?? "N/A",
+        requiresPython: firstFile?.requires_python ?? "N/A",
+        uploadDate,
+        uploadTime: uploadDate ? new Date(uploadDate).getTime() : 0,
+        size: totalSize,
+      };
+    });
+    entries.sort((a, b) => b.uploadTime - a.uploadTime);
+    return entries;
   }, [releases]);
 
   if (versionEntries.length === 0) {
@@ -89,12 +91,8 @@ export const VersionsTab: React.FC<VersionsTabProps> = ({
   };
 
   const navigateToVersion = (version: string) => {
-    navigate(
-      `${generatePath(Paths.pythonDetails, {
-        distributionBasePath,
-        pythonId: packageName,
-      })}?version=${encodeURIComponent(version)}`,
-    );
+    const separator = packageDetailPath.includes("?") ? "&" : "?";
+    navigate(`${packageDetailPath}${separator}version=${encodeURIComponent(version)}`);
   };
 
   return (

@@ -1,0 +1,27 @@
+.overview-markdown {
+  font-size: var(--pf-v6-global--FontSize--sm, 0.875rem);
+  line-height: 1.6;
+  max-width: 72ch;
+}
+
+.overview-markdown ul,
+.overview-markdown ol {
+  margin: 0.5rem 0 0.5rem 1rem;
+}
+
+.overview-markdown code {
+  font-size: 0.9em;
+  background: var(--pf-v6-global--BackgroundColor--200, #f0f0f0);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+}
+
+.overview-markdown pre {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.overview-markdown pre code {
+  padding: 0.75rem;
+  display: block;
+}

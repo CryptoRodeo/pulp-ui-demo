@@ -1,14 +1,11 @@
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   Card,
   CardBody,
-  CardFooter,
   CardHeader,
-  ClipboardCopy,
-  Divider,
-  Flex,
+  Content,
   Grid,
   GridItem,
   PageSection,
@@ -20,41 +17,23 @@ import { DocumentMetadata } from "@app/components/DocumentMetadata";
 import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { LoadingDataEmptyState } from "@app/components/LoadingDataEmptyState";
 import { useFetchDistributions } from "@app/queries/distributions";
-import { useFetchUniquePackages } from "@app/queries/packages";
-import {
-  getAIPCCDistributions,
-  getBaseImageRegistryUrl,
-} from "@app/utils/distributions";
-
-import { CardList } from "@app/pages/python-list/components/CardList";
-import { DistributionDetailCards } from "@app/pages/python-list/components/DistributionDetailCards";
+import { getAIPCCDistributions } from "@app/utils/distributions";
+import { getRedHatAIComponentsDistributionPath } from "@app/Routes";
 
 export const RedHatAIComponents: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const distributionParam = searchParams.get("distribution");
+  const navigate = useNavigate();
 
   const { distributions, isFetching, fetchError } = useFetchDistributions();
   const aipccDistributions = React.useMemo(
     () => getAIPCCDistributions(distributions),
     [distributions],
   );
-  const selectedDistribution = React.useMemo(
-    () =>
-      aipccDistributions.find((d) => d.base_path === distributionParam) ?? null,
-    [aipccDistributions, distributionParam],
-  );
-
-  const { packages } = useFetchUniquePackages(
-    { distributionPath: selectedDistribution?.base_path ?? "" },
-    !selectedDistribution,
-  );
-  const packageCount = selectedDistribution ? packages.length : null;
 
   const onDistributionCardClick = React.useCallback(
     (d: DistributionResponse) => {
-      setSearchParams({ distribution: d.base_path }, { replace: true });
+      navigate(getRedHatAIComponentsDistributionPath(d.base_path));
     },
-    [setSearchParams],
+    [navigate],
   );
 
   return (
@@ -76,67 +55,30 @@ export const RedHatAIComponents: React.FC = () => {
           </Title>
           <Grid hasGutter style={{ marginTop: "1rem" }}>
             {aipccDistributions.map((d) => (
-              <GridItem key={d.name} sm={12} md={6} lg={4} xl={3}>
+              <GridItem key={d.name} sm={12} md={6}>
                 <Card
+                  isCompact
                   isClickable
-                  isSelectable
-                  isSelected={selectedDistribution?.name === d.name}
                   onClick={() => onDistributionCardClick(d)}
                 >
-                  <CardHeader>
-                    <Title headingLevel="h3" size="md">
-                      {d.name}
-                    </Title>
+                  <CardHeader
+                    selectableActions={{
+                      onClickAction: () => onDistributionCardClick(d),
+                      selectableActionAriaLabelledby: `${d.name}-card`,
+                    }}
+                  >
+                    <Content component="h4">{d.name}</Content>
                   </CardHeader>
                   <CardBody>
-                    {d.base_path}
-                    {getBaseImageRegistryUrl(d) && (
-                      <Flex
-                        className="pf-v6-u-mt-sm"
-                        direction={{ default: "column" }}
-                        gap={{ default: "gapXs" }}
-                      >
-                        <span className="pf-v6-u-font-size-sm pf-v6-u-color-200">
-                          Base image
-                        </span>
-                        <ClipboardCopy
-                          isReadOnly
-                          hoverTip="Copy"
-                          clickTip="Copied"
-                          variant="inline-compact"
-                        >
-                          {getBaseImageRegistryUrl(d)}
-                        </ClipboardCopy>
-                      </Flex>
-                    )}
+                    <Content component="small">
+                      Browse Python packages for this distribution.
+                    </Content>
                   </CardBody>
-                  <CardFooter>Browse packages →</CardFooter>
                 </Card>
               </GridItem>
             ))}
           </Grid>
         </PageSection>
-        {selectedDistribution && (
-          <>
-            <Divider />
-            <PageSection>
-              <Title headingLevel="h2" size="lg">
-                {selectedDistribution.name}
-              </Title>
-              <DistributionDetailCards
-                distribution={selectedDistribution}
-                packageCount={packageCount}
-                showBaseImageUrl
-              />
-            </PageSection>
-            <PageSection>
-              <CardList
-                distribution={selectedDistribution}
-                tableName="redhat-ai-components-table"
-              />
-            </PageSection>
-          </>
-        )}
       </LoadingWrapper>
     </>
   );
