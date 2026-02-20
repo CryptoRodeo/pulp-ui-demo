@@ -1,6 +1,7 @@
 import React from "react";
 
 import {
+  Button,
   Card,
   CardBody,
   CardTitle,
@@ -9,9 +10,12 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
+  Flex,
   Grid,
   GridItem,
 } from "@patternfly/react-core";
+import BookIcon from "@patternfly/react-icons/dist/esm/icons/book-icon";
+import EnvelopeIcon from "@patternfly/react-icons/dist/esm/icons/envelope-icon";
 
 import type { DistributionResponse } from "@app/client";
 import { formatDateTime } from "@app/utils/utils";
@@ -23,12 +27,15 @@ export interface DistributionDetailCardsProps {
   packageCount: number | null;
   /** Show base image registry URL (e.g. for AIPCC distributions) */
   showBaseImageUrl?: boolean;
+  /** Optional lead description shown at top of About card (keeps page title + cards only) */
+  leadDescription?: string;
 }
 
 export const DistributionDetailCards: React.FC<DistributionDetailCardsProps> = ({
   distribution,
   packageCount,
   showBaseImageUrl = false,
+  leadDescription,
 }) => {
   if (!distribution) return null;
 
@@ -41,50 +48,59 @@ export const DistributionDetailCards: React.FC<DistributionDetailCardsProps> = (
     display: "flex",
     flexDirection: "column" as const,
   };
-  const cardBodyStyle = { flexGrow: 1 };
+  const cardBodyStyle = { flexGrow: 1, display: "flex", flexDirection: "column" as const };
 
   return (
     <Grid hasGutter style={{ marginTop: "1rem" }}>
-      <GridItem sm={12} lg={8}>
+      <GridItem sm={12} lg={6}>
         <Card style={cardStyle}>
           <CardTitle component="h3">About</CardTitle>
           <CardBody style={cardBodyStyle}>
+            {leadDescription && (
+              <p className="pf-v6-u-mb-md" style={{ marginTop: 0 }}>
+                {leadDescription}
+              </p>
+            )}
             {distribution.description && (
               <p className="pf-v6-u-mb-md">{distribution.description}</p>
             )}
-            <div>
-              {showBaseImageUrl ? (
-                <p className="pf-v6-u-mb-0">
-                  For issues with this distribution, contact the{" "}
-                  <a href="mailto:aipcc-team@redhat.com">AIPCC team</a>.
-                </p>
-              ) : (
-                <>
-                  <p className="pf-v6-u-mb-sm">
-                    For issues with this distribution or to request access,
-                    contact Red Hat support.
-                  </p>
-                  <a
-                    href="https://access.redhat.com/support"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Red Hat Customer Portal
-                  </a>
-                </>
-              )}
-            </div>
+            <Flex gap={{ default: "gapMd" }} alignItems={{ default: "alignItemsCenter" }} style={{ flexWrap: "wrap", marginTop: "auto" }}>
+              <Button
+                component="a"
+                href="https://docs.example.com/placeholder"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="link"
+                size="sm"
+                icon={<BookIcon />}
+                iconPosition="end"
+              >
+                View Documentation
+              </Button>
+              <Button
+                component="a"
+                href={showBaseImageUrl ? "mailto:aipcc-team@redhat.com" : "https://access.redhat.com/support"}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="link"
+                size="sm"
+                icon={<EnvelopeIcon />}
+                iconPosition="end"
+              >
+                Contact Us
+              </Button>
+            </Flex>
           </CardBody>
         </Card>
       </GridItem>
-      <GridItem sm={12} lg={4}>
+      <GridItem sm={12} lg={6}>
         <Card style={cardStyle}>
           <CardTitle component="h3">Details</CardTitle>
           <CardBody style={cardBodyStyle}>
             <DescriptionList className="pf-v6-u-mb-0">
               {distribution.base_url && (
                 <DescriptionListGroup>
-                  <DescriptionListTerm>Distribution URL</DescriptionListTerm>
+                  <DescriptionListTerm>Index URL</DescriptionListTerm>
                   <DescriptionListDescription>
                     <ClipboardCopy
                       isReadOnly

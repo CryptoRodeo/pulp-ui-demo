@@ -170,7 +170,7 @@ const PythonDetailsContent: React.FC<PythonDetailsContentProps> = ({
           {pathname.startsWith("/redhat-ai-components") &&
             distributionParam && (
               <BreadcrumbItem>
-                <Link to={Paths.redHatAIComponents}>Distributions</Link>
+                <Link to={Paths.redHatAIComponents}>Indexes</Link>
               </BreadcrumbItem>
             )}
           {pathname.startsWith("/redhat-ai-components") &&

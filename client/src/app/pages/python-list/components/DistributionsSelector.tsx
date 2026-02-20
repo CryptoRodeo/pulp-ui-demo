@@ -67,14 +67,14 @@ export const DistributionSelector: React.FC<IDistributionSelectorProps> = ({
   };
 
   const toggle = (toggleRef: React.Ref<MenuToggleElement>) => {
-    let displayText = "Select a distribution";
+    let displayText = "Select an index";
     if (selected) {
       displayText = selected.name;
     }
     return (
       <MenuToggle
         ref={toggleRef}
-        aria-label="distribution-select"
+        aria-label="index-select"
         // isFullWidth
         onClick={onToggleClick}
         isExpanded={isOpen}

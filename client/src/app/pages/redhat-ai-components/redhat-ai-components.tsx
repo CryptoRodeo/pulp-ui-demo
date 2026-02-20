@@ -21,6 +21,7 @@ import {
   ToolbarContent,
 } from "@patternfly/react-core";
 import { Table, Thead, Tr, Th, Tbody, Td, type ThProps } from "@patternfly/react-table";
+import "./redhat-ai-table.css";
 import CpuIcon from "@patternfly/react-icons/dist/esm/icons/cpu-icon";
 import ServerIcon from "@patternfly/react-icons/dist/esm/icons/server-icon";
 import TagIcon from "@patternfly/react-icons/dist/esm/icons/tag-icon";
@@ -216,7 +217,6 @@ export const RedHatAIComponents: React.FC = () => {
     const dims = getAIPCCDistributionDimensions(d);
     return [
       d.name,
-      getAIPCCDistributionDescription(d),
       dims.productVersion || "",
       dims.accelerator || "",
       dims.baseImage ?? "",
@@ -273,6 +273,9 @@ export const RedHatAIComponents: React.FC = () => {
           <Title headingLevel="h1" size="2xl">
             Red Hat AI Components
           </Title>
+          <Content component="p" style={{ marginTop: "0.25rem" }}>
+            A collection of package indexes for AI and ML, each tuned to specific accelerators and product versions. Select the index that matches your environment.
+          </Content>
         </PageSection>
         <PageSection>
           <Flex direction={{ default: "column" }} gap={{ default: "gapMd" }}>
@@ -453,36 +456,44 @@ export const RedHatAIComponents: React.FC = () => {
                   headingLevel="h3"
                   titleText={
                     visibleDistributions.length === 0
-                      ? "No distributions available"
-                      : "No distributions match filters"
+                      ? "No indexes available"
+                      : "No indexes match filters"
                   }
                 >
                   <EmptyStateBody>
                     {visibleDistributions.length === 0
-                      ? "There are no Red Hat AI distributions to display."
-                      : "No distributions match the current filters. Clear or adjust filters to see more."}
+                      ? "There are no Red Hat AI indexes to display."
+                      : "No indexes match the current filters. Clear or adjust filters to see more."}
                   </EmptyStateBody>
                 </EmptyState>
               ) : (
-                <Table
-                  aria-label="Distributions"
-                  variant="compact"
-                  style={{
-                    marginTop: hasActiveFilters ? 0 : "1rem",
-                    tableLayout: "auto",
-                  }}
-                >
+                <div style={{ overflowX: "auto", marginTop: hasActiveFilters ? 0 : "1rem" }}>
+                  <Table
+                    className="rhai-indexes-table"
+                    aria-label="Indexes"
+                    variant="compact"
+                    style={{
+                      tableLayout: "fixed",
+                      width: "100%",
+                      minWidth: "32rem",
+                    }}
+                  >
+                  <colgroup>
+                    <col style={{ width: "auto" }} />
+                    <col style={{ width: "11rem" }} />
+                    <col style={{ width: "9rem" }} />
+                    <col style={{ width: "10rem" }} />
+                  </colgroup>
                   <Thead>
                     <Tr>
-                      <Th>Distribution</Th>
-                      <Th>Description</Th>
-                      <Th modifier="wrap" sort={getSortParams(2)}>
+                      <Th>Index</Th>
+                      <Th modifier="wrap" style={{ minWidth: "11rem" }} sort={getSortParams(1)}>
                         Product version
                       </Th>
-                      <Th modifier="wrap" sort={getSortParams(3)}>
+                      <Th modifier="wrap" style={{ minWidth: "9rem" }} sort={getSortParams(2)}>
                         Accelerator
                       </Th>
-                      <Th modifier="wrap" sort={getSortParams(4)}>
+                      <Th modifier="nowrap" style={{ minWidth: "10rem" }} sort={getSortParams(3)}>
                         RHEL version
                       </Th>
                     </Tr>
@@ -492,17 +503,29 @@ export const RedHatAIComponents: React.FC = () => {
                       const dims = getAIPCCDistributionDimensions(d);
                       return (
                         <Tr key={d.base_path}>
-                          <Td dataLabel="Distribution" style={{ whiteSpace: "normal" }}>
-                            <Button
-                              variant="link"
-                              isInline
-                              onClick={() => onDistributionCardClick(d)}
-                            >
-                              {d.name}
-                            </Button>
-                          </Td>
-                          <Td dataLabel="Description" style={{ whiteSpace: "normal" }}>
-                            {getAIPCCDistributionDescription(d)}
+                          <Td dataLabel="Index" style={{ whiteSpace: "normal" }}>
+                            <div>
+                              <Button
+                                variant="link"
+                                isInline
+                                onClick={() => onDistributionCardClick(d)}
+                              >
+                                {d.name}
+                              </Button>
+                              <div
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#6a6e73",
+                                  marginTop: "0.25rem",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 1,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                {getAIPCCDistributionDescription(d)}
+                              </div>
+                            </div>
                           </Td>
                           <Td dataLabel="Product version" modifier="wrap">
                             {dims.productVersion || "—"}
@@ -518,6 +541,7 @@ export const RedHatAIComponents: React.FC = () => {
                     })}
                   </Tbody>
                 </Table>
+                </div>
               )}
             </FlexItem>
           </Flex>

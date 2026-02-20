@@ -46,6 +46,7 @@ export const TrustedLibrariesContent: React.FC = () => {
             distribution={selectedDistribution}
             packageCount={packageCount}
             showBaseImageUrl={false}
+            leadDescription="Curated, security-vetted open source libraries with enterprise support and compliance-ready SBOMs. Built in SLSA Level 3 infrastructure with full provenance and attestation—every package is cryptographically signed."
           />
         </PageSection>
         <Divider />

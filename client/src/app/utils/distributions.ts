@@ -68,7 +68,12 @@ export function isTestDistribution(d: DistributionResponse): boolean {
   return path.endsWith("-test") || name.toLowerCase().endsWith("-test");
 }
 
-/** Parsed dimensions from an AIPCC distribution base_path (e.g. rhoai/3.0/cuda-ubi9 → product, version, accelerator label, base image). */
+/**
+ * Parsed dimensions from an AIPCC distribution's base_path (and name as fallback for base image).
+ * The API only provides base_path and name—there are no separate fields for product version,
+ * accelerator, or RHEL/UBI. These are derived by parsing the path structure (e.g. rhoai/3.0/cuda-ubi9
+ * → product, version, accelerator label, base image).
+ */
 export interface AIPCCDistributionDimensions {
   /** Product name, e.g. "rhoai", "spyre" (first segment of base_path). */
   product: string;
@@ -114,9 +119,8 @@ export function getAIPCCDistributionDimensions(
 }
 
 /**
- * Short human-readable description for an AIPCC distribution (e.g. for cards or table).
- * Wheels: "Pre-built Python wheels for RHOAI 3.2 on CUDA 12.9 with UBI 9."
- * Sdists: "Python source distributions (sdists) for RHOAI 3.0 on CPU with UBI 9."
+ * Human-readable description for an AIPCC distribution. Used in both the
+ * distribution table and the index detail page so copy stays consistent.
  */
 export function getAIPCCDistributionDescription(
   d: DistributionResponse,
@@ -128,11 +132,11 @@ export function getAIPCCDistributionDescription(
   if (productVersion) parts.push(`${product} ${productVersion}`);
   if (accelerator) parts.push(`on ${accelerator}`);
   if (baseImage) parts.push(`with ${baseImage}`);
-  const suffix = parts.length === 0 ? "this distribution" : parts.join(" ");
+  const stack = parts.length === 0 ? "this index" : parts.join(" ");
   if (isSdistsDistribution(d)) {
-    return `Python source distributions (sdists) for ${suffix}.`;
+    return `Python source distributions (sdists) for ${stack}. Sdists are source packages you build in your own pipeline—often used for compliance or custom builds. RHOAI (Red Hat OpenShift AI) and UBI (Universal Base Image) define the supported product and base image.`;
   }
-  return `Pre-built Python wheels for ${suffix}.`;
+  return `Pre-built Python wheels for ${stack}. Wheels are binary packages for fast installs without compiling. RHOAI (Red Hat OpenShift AI), the accelerator (e.g. CUDA, ROCm), and UBI (Universal Base Image) define the supported stack for reproducible, supply-chain-secure installs.`;
 }
 
 /** True if this distribution is the sdists (source distributions) variant (name or base_path contains "sdists"). */

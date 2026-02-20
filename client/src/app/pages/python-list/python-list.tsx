@@ -85,7 +85,7 @@ export const PythonList: React.FC = () => {
               icon={CubesIcon}
             >
               <EmptyStateBody>
-                Packages are grouped in distributions. Select one to see
+                Packages are grouped by index. Select one to see
                 packages.
               </EmptyStateBody>
               <EmptyStateFooter>

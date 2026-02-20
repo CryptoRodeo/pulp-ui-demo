@@ -4,7 +4,6 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  Content,
   Divider,
   PageSection,
   Title,
@@ -84,7 +83,7 @@ const RedHatAIDistributionDetail: React.FC = () => {
             <PageSection type="breadcrumb">
               <Breadcrumb>
                 <BreadcrumbItem>
-                  <Link to={Paths.redHatAIComponents}>Distributions</Link>
+                  <Link to={Paths.redHatAIComponents}>Indexes</Link>
                 </BreadcrumbItem>
                 <BreadcrumbItem isActive>{distribution.name}</BreadcrumbItem>
               </Breadcrumb>
@@ -93,13 +92,11 @@ const RedHatAIDistributionDetail: React.FC = () => {
               <Title headingLevel="h1" size="2xl">
                 {distribution.name}
               </Title>
-              <Content component="p" style={{ marginTop: "0.25rem" }}>
-                {getAIPCCDistributionDescription(distribution)}
-              </Content>
               <DistributionDetailCards
                 distribution={distribution}
                 packageCount={packageCount}
                 showBaseImageUrl
+                leadDescription={getAIPCCDistributionDescription(distribution)}
               />
             </PageSection>
             <Divider />
