@@ -28,10 +28,13 @@ import { ThemeSelector } from "@app/components/ThemeSelector";
 import useBranding from "@app/hooks/useBranding";
 import { ThemeContext } from "@app/components/ThemeContext";
 
+import { REPOSITORY_ENTRIES } from "@app/repositories";
+
 import { AboutApp } from "./about";
 import "./header.css";
 
 const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+
 const sectionLogoByPath: Record<
   string,
   { src: string; alt: string; height: string; to: string }
@@ -42,24 +45,22 @@ const sectionLogoByPath: Record<
     height: "44px",
     to: "/",
   },
-  "/trusted-libraries": {
-    src: `${BASE}/images/trusted-libraries.svg`,
-    alt: "Trusted Libraries",
-    height: "44px",
-    to: "/trusted-libraries",
-  },
-  "/redhat-ai-components": {
-    src: `${BASE}/images/rhai.svg`,
-    alt: "Red Hat AI Components",
-    height: "44px",
-    to: "/redhat-ai-components",
-  },
+  ...Object.fromEntries(
+    REPOSITORY_ENTRIES.map((repo) => [
+      repo.path,
+      {
+        src: `${BASE}/images/${repo.imageName}`,
+        alt: repo.label,
+        height: "44px",
+        to: repo.path,
+      },
+    ]),
+  ),
 };
 
 function getSectionKey(pathname: string): string {
-  if (pathname.startsWith("/trusted-libraries")) return "/trusted-libraries";
-  if (pathname.startsWith("/redhat-ai-components")) return "/redhat-ai-components";
-  return "/";
+  const match = REPOSITORY_ENTRIES.find((repo) => pathname.startsWith(repo.path));
+  return match ? match.path : "/";
 }
 
 export const HeaderApp: React.FC = () => {
