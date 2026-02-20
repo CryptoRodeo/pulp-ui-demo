@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 
+import type { UniquePackageMetadataResponse } from "@app/api/models";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,47 +23,69 @@ import {
 import { CopyIcon } from "@patternfly/react-icons";
 
 import { DocumentMetadata } from "@app/components/DocumentMetadata";
+import { useFetchDistributions } from "@app/queries/distributions";
 import {
   useFetchPackageContent,
   useSuspenseUniquePackageMetadata,
 } from "@app/queries/packages";
-import { PathParam, Paths } from "@app/Routes";
-import { TRUSTED_LIBRARIES_BASE_PATH } from "@app/utils/distributions";
+import {
+  getRedHatAIComponentsDistributionPath,
+  PathParam,
+  Paths,
+} from "@app/Routes";
+import { RedHatAISplatContext } from "@app/pages/redhat-ai-components/RedHatAISplatHandler";
+import {
+  getAIPCCDistributions,
+  TRUSTED_LIBRARIES_BASE_PATH,
+} from "@app/utils/distributions";
 
 import { FilesTab, OverviewTab, VersionsTab } from "./components";
 
-export const PythonDetails: React.FC = () => {
-  const location = useLocation();
-  const pathname = location.pathname;
-  const params = useParams();
-  const packageNameParam = params[PathParam.PYTHON_ID];
-  const distributionParam = params[PathParam.DISTRIBUTION_BASE_PATH];
+/** Shared props for package detail content (used when pkg comes from hook or from pre-fetched prop). */
+interface PythonDetailsContentProps {
+  pkg: UniquePackageMetadataResponse;
+  pathname: string;
+  distributionParam: string | undefined;
+  packageName: string;
+  versionParam: string | undefined;
+  isFetching?: boolean;
+}
 
-  const isTrustedLibrariesRoute = pathname.startsWith("/trusted-libraries");
-  const packageName = packageNameParam ?? "";
-  const distributionBasePath = isTrustedLibrariesRoute
-    ? TRUSTED_LIBRARIES_BASE_PATH
-    : (distributionParam ?? "");
-
-  const [searchParams] = useSearchParams();
-  const versionParam = searchParams.get("version") ?? undefined;
-
+const PythonDetailsContent: React.FC<PythonDetailsContentProps> = ({
+  pkg,
+  pathname,
+  distributionParam,
+  packageName,
+  versionParam,
+  isFetching = false,
+}) => {
   const [activeTabKey, setActiveTabKey] = React.useState<number>(0);
 
-  const { pkg, isFetching } = useSuspenseUniquePackageMetadata({
-    distributionPath: distributionBasePath,
-    packageName,
-    packageVersion: versionParam,
-  });
+  React.useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      const main = document.getElementById("main-content-page-layout-horizontal-nav");
+      if (main) main.scrollTo(0, 0);
+    };
+    scrollToTop();
+    const t = setTimeout(scrollToTop, 0);
+    return () => clearTimeout(t);
+  }, [pathname, packageName]);
+
+  const { distributions } = useFetchDistributions();
+  const rhaiDistributionName = React.useMemo(() => {
+    if (!pathname.startsWith("/redhat-ai-components") || !distributionParam)
+      return null;
+    const aipcc = getAIPCCDistributions(distributions ?? []);
+    const dist = aipcc.find((d) => d.base_path === distributionParam);
+    return dist?.name ?? distributionParam;
+  }, [pathname, distributionParam, distributions]);
 
   const { contentPkg } = useFetchPackageContent({
     name: packageName,
     version: versionParam,
   });
 
-  // When a specific version is selected, the Pulp PyPI JSON endpoint still
-  // returns latest-version metadata in `info`. Override with version-accurate
-  // fields from the content API.
   const rawInfo = pkg?.info;
   const info = React.useMemo(() => {
     if (!contentPkg || !rawInfo) return rawInfo;
@@ -130,24 +153,50 @@ export const PythonDetails: React.FC = () => {
   const currentVersion = versionParam ?? info.version ?? "";
   const classifiers = info.classifiers ?? [];
 
+  const documentTitleProductName = pathname.startsWith("/redhat-ai-components")
+    ? "Red Hat AI Components"
+    : pathname.startsWith("/trusted-libraries")
+      ? "Trusted Libraries"
+      : undefined;
+
   return (
     <>
-      <DocumentMetadata title={info.name ?? "Python"} />
+      <DocumentMetadata
+        title={info.name ?? "Python"}
+        productName={documentTitleProductName}
+      />
       <PageSection type="breadcrumb">
         <Breadcrumb>
-          <BreadcrumbItem>
-            <Link
-              to={
-                pathname.startsWith("/trusted-libraries")
-                  ? Paths.trustedLibraries
-                  : pathname.startsWith("/redhat-ai-components")
-                    ? Paths.redHatAIComponents
+          {pathname.startsWith("/redhat-ai-components") &&
+            distributionParam && (
+              <BreadcrumbItem>
+                <Link to={Paths.redHatAIComponents}>Distributions</Link>
+              </BreadcrumbItem>
+            )}
+          {pathname.startsWith("/redhat-ai-components") &&
+            distributionParam && (
+              <BreadcrumbItem>
+                <Link
+                  to={getRedHatAIComponentsDistributionPath(distributionParam)}
+                >
+                  {rhaiDistributionName ?? distributionParam}
+                </Link>
+              </BreadcrumbItem>
+            )}
+          {(!pathname.startsWith("/redhat-ai-components") ||
+            !distributionParam) && (
+            <BreadcrumbItem>
+              <Link
+                to={
+                  pathname.startsWith("/trusted-libraries")
+                    ? Paths.trustedLibraries
                     : Paths.landing
-              }
-            >
-              Packages
-            </Link>
-          </BreadcrumbItem>
+                }
+              >
+                Packages
+              </Link>
+            </BreadcrumbItem>
+          )}
           <BreadcrumbItem isActive>{info.name}</BreadcrumbItem>
         </Breadcrumb>
       </PageSection>
@@ -252,5 +301,76 @@ export const PythonDetails: React.FC = () => {
         </Tabs>
       </PageSection>
     </>
+  );
+};
+
+/** Uses suspense to load package metadata. Used for trusted-libraries and path-based package detail routes. */
+export const PythonDetails: React.FC = () => {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const params = useParams();
+  const splatContext = React.useContext(RedHatAISplatContext);
+  const packageNameParam = splatContext?.packageName ?? params[PathParam.PYTHON_ID];
+  const distributionParam =
+    splatContext?.distributionBasePath ?? params[PathParam.DISTRIBUTION_BASE_PATH];
+
+  const isTrustedLibrariesRoute = pathname.startsWith("/trusted-libraries");
+  const packageName = packageNameParam ?? "";
+  const distributionBasePath = isTrustedLibrariesRoute
+    ? TRUSTED_LIBRARIES_BASE_PATH
+    : (distributionParam ?? "");
+
+  const [searchParams] = useSearchParams();
+  const versionParam = searchParams.get("version") ?? undefined;
+
+  const { pkg, isFetching } = useSuspenseUniquePackageMetadata({
+    distributionPath: distributionBasePath,
+    packageName,
+    packageVersion: versionParam,
+  });
+
+  if (!pkg) {
+    return (
+      <PageSection>
+        <h1>No package found</h1>
+      </PageSection>
+    );
+  }
+
+  return (
+    <PythonDetailsContent
+      pkg={pkg}
+      pathname={pathname}
+      distributionParam={distributionParam ?? undefined}
+      packageName={packageName}
+      versionParam={versionParam}
+      isFetching={isFetching}
+    />
+  );
+};
+
+/** Renders package detail using pre-fetched pkg (e.g. from RHAIPackageDetailGate). Avoids suspense query so the error boundary is not triggered. */
+export const PythonDetailsWithPrefetchedPkg: React.FC<{
+  pkg: UniquePackageMetadataResponse;
+}> = ({ pkg }) => {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const params = useParams();
+  const splatContext = React.useContext(RedHatAISplatContext);
+  const packageNameParam = splatContext?.packageName ?? params[PathParam.PYTHON_ID];
+  const distributionParam =
+    splatContext?.distributionBasePath ?? params[PathParam.DISTRIBUTION_BASE_PATH];
+  const packageName = packageNameParam ?? "";
+  const [searchParams] = useSearchParams();
+  const versionParam = searchParams.get("version") ?? undefined;
+
+  return (
+    <PythonDetailsContent
+      pkg={pkg}
+      pathname={pathname}
+      distributionParam={distributionParam ?? undefined}
+      packageName={packageName}
+      versionParam={versionParam}
+    />
   );
 };

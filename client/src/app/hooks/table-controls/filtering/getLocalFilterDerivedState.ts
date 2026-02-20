@@ -76,3 +76,37 @@ const legacyMatcher = (filterValue: string, value: any) => {
   const lowerCaseFilterValue = String(filterValue).toLowerCase();
   return lowerCaseItemValue.indexOf(lowerCaseFilterValue) !== -1;
 };
+
+/**
+ * Filter items by only the given filter keys (used for chained/cascading filter options).
+ * Returns items that match the current filter values for every key in includeKeys.
+ */
+export function getItemsMatchingFilterSubset<
+  TItem,
+  TFilterCategoryKey extends string,
+>(
+  items: TItem[],
+  filterValues: Partial<Record<TFilterCategoryKey, FilterValue>>,
+  filterCategories: FilterCategory<TItem, TFilterCategoryKey>[],
+  includeKeys: TFilterCategoryKey[],
+): TItem[] {
+  return items.filter((item) =>
+    includeKeys.every((filterKey) => {
+      const values = filterValues[filterKey];
+      if (!values || values.length === 0) return true;
+      const filterCategory = filterCategories.find(
+        (c) => c.categoryKey === filterKey,
+      );
+      const defaultMatcher = (filterValue: string, i: TItem) =>
+        legacyMatcher(
+          filterValue,
+          // biome-ignore lint/suspicious/noExplicitAny: allowed
+          filterCategory?.getItemValue?.(i) ?? (i as any)[filterKey],
+        );
+      const matcher = filterCategory?.matcher ?? defaultMatcher;
+      const logicOperator =
+        getFilterLogicOperator(filterCategory) === "AND" ? "every" : "some";
+      return values[logicOperator]((filterValue) => matcher(filterValue, item));
+    }),
+  );
+}

@@ -4,6 +4,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Breadcrumb,
   BreadcrumbItem,
+  Content,
   Divider,
   PageSection,
   Title,
@@ -14,8 +15,16 @@ import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { LoadingDataEmptyState } from "@app/components/LoadingDataEmptyState";
 import { useFetchDistributions } from "@app/queries/distributions";
 import { useFetchUniquePackages } from "@app/queries/packages";
-import { getAIPCCDistributions } from "@app/utils/distributions";
-import { getRedHatAIComponentsPackageDetailPath, Paths } from "@app/Routes";
+import {
+  getAIPCCDistributions,
+  getAIPCCDistributionDescription,
+} from "@app/utils/distributions";
+import {
+  getRedHatAIComponentsPackageDetailPath,
+  PathParam,
+  Paths,
+} from "@app/Routes";
+import { RedHatAISplatContext } from "./RedHatAISplatHandler";
 
 import { CardList } from "@app/pages/python-list/components/CardList";
 import { DistributionDetailCards } from "@app/pages/python-list/components/DistributionDetailCards";
@@ -23,7 +32,11 @@ import { DistributionDetailCards } from "@app/pages/python-list/components/Distr
 const RedHatAIDistributionDetail: React.FC = () => {
   const params = useParams();
   const navigate = useNavigate();
-  const distributionBasePath = params["*"] ?? "";
+  const splatContext = React.useContext(RedHatAISplatContext);
+  const distributionBasePath =
+    splatContext?.distributionBasePath ??
+    params[PathParam.DISTRIBUTION_BASE_PATH] ??
+    "";
 
   const { distributions, isFetching, fetchError } = useFetchDistributions();
   const aipccDistributions = React.useMemo(
@@ -59,6 +72,7 @@ const RedHatAIDistributionDetail: React.FC = () => {
             ? `${distribution.name} — Red Hat AI Components`
             : "Red Hat AI Components"
         }
+        productName="Red Hat AI Components"
       />
       <LoadingWrapper
         isFetching={isFetching}
@@ -70,7 +84,7 @@ const RedHatAIDistributionDetail: React.FC = () => {
             <PageSection type="breadcrumb">
               <Breadcrumb>
                 <BreadcrumbItem>
-                  <Link to={Paths.redHatAIComponents}>Red Hat AI Components</Link>
+                  <Link to={Paths.redHatAIComponents}>Distributions</Link>
                 </BreadcrumbItem>
                 <BreadcrumbItem isActive>{distribution.name}</BreadcrumbItem>
               </Breadcrumb>
@@ -79,6 +93,9 @@ const RedHatAIDistributionDetail: React.FC = () => {
               <Title headingLevel="h1" size="2xl">
                 {distribution.name}
               </Title>
+              <Content component="p" style={{ marginTop: "0.25rem" }}>
+                {getAIPCCDistributionDescription(distribution)}
+              </Content>
               <DistributionDetailCards
                 distribution={distribution}
                 packageCount={packageCount}
@@ -90,7 +107,9 @@ const RedHatAIDistributionDetail: React.FC = () => {
               <CardList
                 distribution={distribution}
                 tableName="redhat-ai-components-table"
-                getPackageDetailPath={getRedHatAIComponentsPackageDetailPath}
+                getPackageDetailPath={(dist, packageName) =>
+                  getRedHatAIComponentsPackageDetailPath(dist.base_path, packageName)
+                }
               />
             </PageSection>
           </>

@@ -36,16 +36,55 @@ export const DistributionDetailCards: React.FC<DistributionDetailCardsProps> = (
     ? getBaseImageRegistryUrl(distribution)
     : null;
 
+  const cardStyle = {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column" as const,
+  };
+  const cardBodyStyle = { flexGrow: 1 };
+
   return (
     <Grid hasGutter style={{ marginTop: "1rem" }}>
-      <GridItem sm={12} md={4}>
-        <Card>
-          <CardTitle component="h3">Index &amp; base image</CardTitle>
-          <CardBody>
-            <DescriptionList className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-gap-md">
+      <GridItem sm={12} lg={8}>
+        <Card style={cardStyle}>
+          <CardTitle component="h3">About</CardTitle>
+          <CardBody style={cardBodyStyle}>
+            {distribution.description && (
+              <p className="pf-v6-u-mb-md">{distribution.description}</p>
+            )}
+            <div>
+              {showBaseImageUrl ? (
+                <p className="pf-v6-u-mb-0">
+                  For issues with this distribution, contact the{" "}
+                  <a href="mailto:aipcc-team@redhat.com">AIPCC team</a>.
+                </p>
+              ) : (
+                <>
+                  <p className="pf-v6-u-mb-sm">
+                    For issues with this distribution or to request access,
+                    contact Red Hat support.
+                  </p>
+                  <a
+                    href="https://access.redhat.com/support"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Red Hat Customer Portal
+                  </a>
+                </>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      </GridItem>
+      <GridItem sm={12} lg={4}>
+        <Card style={cardStyle}>
+          <CardTitle component="h3">Details</CardTitle>
+          <CardBody style={cardBodyStyle}>
+            <DescriptionList className="pf-v6-u-mb-0">
               {distribution.base_url && (
                 <DescriptionListGroup>
-                  <DescriptionListTerm>Distribution index</DescriptionListTerm>
+                  <DescriptionListTerm>Distribution URL</DescriptionListTerm>
                   <DescriptionListDescription>
                     <ClipboardCopy
                       isReadOnly
@@ -73,72 +112,13 @@ export const DistributionDetailCards: React.FC<DistributionDetailCardsProps> = (
                   </DescriptionListDescription>
                 </DescriptionListGroup>
               )}
-            </DescriptionList>
-          </CardBody>
-        </Card>
-      </GridItem>
-      <GridItem sm={12} md={4}>
-        <Card>
-          <CardTitle component="h3">Details</CardTitle>
-          <CardBody>
-            <DescriptionList className="pf-v6-u-mb-0">
-              <DescriptionListGroup>
-                <DescriptionListTerm>Package count</DescriptionListTerm>
-                <DescriptionListDescription>
-                  {packageCount !== null ? packageCount.toLocaleString() : "—"}
-                </DescriptionListDescription>
-              </DescriptionListGroup>
               <DescriptionListGroup>
                 <DescriptionListTerm>Last updated</DescriptionListTerm>
                 <DescriptionListDescription>
                   {formatDateTime(distribution.pulp_last_updated) ?? "—"}
                 </DescriptionListDescription>
               </DescriptionListGroup>
-              {distribution.no_content_change_since && (
-                <DescriptionListGroup>
-                  <DescriptionListTerm>
-                    Content unchanged since
-                  </DescriptionListTerm>
-                  <DescriptionListDescription>
-                    {formatDateTime(distribution.no_content_change_since) ??
-                      "—"}
-                  </DescriptionListDescription>
-                </DescriptionListGroup>
-              )}
-              {distribution.content_guard && (
-                <DescriptionListGroup>
-                  <DescriptionListTerm>Access</DescriptionListTerm>
-                  <DescriptionListDescription>Protected</DescriptionListDescription>
-                </DescriptionListGroup>
-              )}
             </DescriptionList>
-          </CardBody>
-        </Card>
-      </GridItem>
-      <GridItem sm={12} md={4}>
-        <Card>
-          <CardTitle component="h3">Support</CardTitle>
-          <CardBody>
-            {showBaseImageUrl ? (
-              <p className="pf-v6-u-mb-0">
-                For issues with this distribution, contact the{" "}
-                <a href="mailto:aipcc-team@redhat.com">AIPCC team</a>.
-              </p>
-            ) : (
-              <>
-                <p className="pf-v6-u-mb-sm">
-                  For issues with this distribution or to request access, contact
-                  Red Hat support.
-                </p>
-                <a
-                  href="https://access.redhat.com/support"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Red Hat Customer Portal
-                </a>
-              </>
-            )}
           </CardBody>
         </Card>
       </GridItem>

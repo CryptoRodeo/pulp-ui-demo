@@ -73,7 +73,7 @@ export const SelectFilterControl = <TItem, TFilterCategoryKey extends string>({
   };
 
   const toggle = (toggleRef: React.Ref<MenuToggleElement>) => {
-    let displayText = "Any";
+    let displayText = category.title;
     if (filterValue && filterValue.length > 0) {
       const selectedKey = filterValue[0];
       const selectedDisplayValue = getOptionFromOptionValue(selectedKey)?.label;
@@ -82,7 +82,7 @@ export const SelectFilterControl = <TItem, TFilterCategoryKey extends string>({
 
     return (
       <MenuToggle
-        aria-label={"Select"}
+        aria-label={category.title}
         id={"select-filter-value-select"}
         isFullWidth
         ref={toggleRef}

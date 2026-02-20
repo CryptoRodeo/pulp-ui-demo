@@ -7,16 +7,11 @@ import {
   CardBody,
   CardFooter,
   CardHeader,
-  ClipboardCopy,
   Content,
   Flex,
   FlexItem,
   Icon,
   Label,
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
   Skeleton,
   Stack,
   StackItem,
@@ -25,9 +20,11 @@ import {
   ToolbarItem,
   Tooltip,
   Truncate,
-  type MenuToggleElement,
 } from "@patternfly/react-core";
+import { css } from "@patternfly/react-styles";
+import clipboardCopyStyles from "@patternfly/react-styles/css/components/ClipboardCopy/clipboard-copy";
 import CertificateIcon from "@patternfly/react-icons/dist/esm/icons/certificate-icon";
+import CopyIcon from "@patternfly/react-icons/dist/esm/icons/copy-icon";
 import UserIcon from "@patternfly/react-icons/dist/esm/icons/user-icon";
 
 import type { DistributionResponse } from "@app/client";
@@ -37,7 +34,6 @@ import { SimplePagination } from "@app/components/SimplePagination";
 import { useLocalTableControls } from "@app/hooks/table-controls";
 import { useFetchUniquePackages } from "@app/queries/packages";
 import { Paths } from "@app/Routes";
-import { toCamelCase } from "@app/utils/utils";
 
 import { LoadingWrapper } from "@app/components/LoadingWrapper";
 import { WithPackage } from "./WithPackage";
@@ -75,10 +71,6 @@ export const CardList: React.FC<ICardListProps> = ({
   const effectiveFetchError = distribution ? fetchError : true;
   const effectiveIsFetching = !!distribution && isFetching;
 
-  // Sorting
-  const [isSortByOpen, setIsSortByOpen] = React.useState<boolean>(false);
-
-  // Table
   const tableControls = useLocalTableControls({
     tableName,
     idProperty: "name",
@@ -106,8 +98,9 @@ export const CardList: React.FC<ICardListProps> = ({
         categoryKey: "name",
         title: "Name",
         type: FilterType.search,
-        placeholderText: "Search by name...",
+        placeholderText: "Filter by package name...",
         getItemValue: (item) => item.name || "",
+        inputStyle: { minWidth: "20rem" },
       },
     ],
     isExpansionEnabled: false,
@@ -121,8 +114,6 @@ export const CardList: React.FC<ICardListProps> = ({
       paginationToolbarItemProps,
       paginationProps,
     },
-    sortableColumns,
-    sortState: { activeSort, setActiveSort },
   } = tableControls;
 
   const getDetailPath = (packageName: string) => {
@@ -154,46 +145,6 @@ export const CardList: React.FC<ICardListProps> = ({
               filterGroupBreakpoint="sm"
               {...filterToolbarProps}
             />
-            <ToolbarItem variant="separator" />
-            <ToolbarItem>
-              Sort by:
-              <Select
-                id="sort-by"
-                isOpen={isSortByOpen}
-                selected={activeSort?.columnKey}
-                onSelect={(_e, value) => {
-                  setActiveSort({
-                    // biome-ignore lint/suspicious/noExplicitAny: allowed
-                    columnKey: value as any,
-                    direction: activeSort?.direction ?? "asc",
-                  });
-                }}
-                onOpenChange={(isOpen) => setIsSortByOpen(isOpen)}
-                toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                  <MenuToggle
-                    ref={toggleRef}
-                    onClick={() => setIsSortByOpen(!isSortByOpen)}
-                    isExpanded={isSortByOpen}
-                    style={
-                      {
-                        width: "200px",
-                      } as React.CSSProperties
-                    }
-                  >
-                    {toCamelCase(activeSort?.columnKey ?? "")}
-                  </MenuToggle>
-                )}
-                shouldFocusToggleOnSelect
-              >
-                <SelectList>
-                  {sortableColumns?.map((e) => (
-                    <SelectOption key={e} value={e}>
-                      {toCamelCase(e)}
-                    </SelectOption>
-                  ))}
-                </SelectList>
-              </Select>
-            </ToolbarItem>
             <ToolbarItem {...paginationToolbarItemProps}>
               <SimplePagination
                 idPrefix={tableName}
@@ -315,7 +266,15 @@ export const CardList: React.FC<ICardListProps> = ({
                                     }
                                   >
                                     <div
-                                      style={{ position: "relative", zIndex: 1 }}
+                                      className={css(
+                                        clipboardCopyStyles.clipboardCopy,
+                                        clipboardCopyStyles.modifiers.inline,
+                                      )}
+                                      style={{
+                                        position: "relative",
+                                        zIndex: 1,
+                                        cursor: "pointer",
+                                      }}
                                       role="button"
                                       tabIndex={0}
                                       onClick={(e) => handleCopy(item.name ?? "", e)}
@@ -324,15 +283,34 @@ export const CardList: React.FC<ICardListProps> = ({
                                           handleCopy(item.name ?? "", e);
                                         }
                                       }}
+                                      aria-label="Copy pip install command"
                                     >
-                                      <ClipboardCopy
-                                        isReadOnly
-                                        hoverTip=""
-                                        clickTip=""
-                                        variant="inline-compact"
+                                      <span
+                                        className={css(
+                                          clipboardCopyStyles.clipboardCopyText,
+                                        )}
                                       >
                                         pip install {item.name ?? ""}
-                                      </ClipboardCopy>
+                                      </span>
+                                      <span
+                                        className={css(
+                                          clipboardCopyStyles.clipboardCopyActions,
+                                          clipboardCopyStyles.clipboardCopyActionsItem,
+                                        )}
+                                        style={{
+                                          pointerEvents: "none",
+                                          color:
+                                            "var(--pf-v6-c-clipboard-copy__actions-item--button--Color)",
+                                        }}
+                                      >
+                                        <CopyIcon
+                                          style={{
+                                            verticalAlign: "-0.125em",
+                                            marginLeft:
+                                              "var(--pf-t--global--spacer--gap--text-to-element--compact, 0.25rem)",
+                                          }}
+                                        />
+                                      </span>
                                     </div>
                                   </Tooltip>
                                 </FlexItem>

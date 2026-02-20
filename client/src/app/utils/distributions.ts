@@ -58,6 +58,89 @@ export function getAIPCCDistributions(
   return distributions.filter((d) => !isTrustedLibrariesDistribution(d));
 }
 
+/**
+ * True if this distribution is a test variant (base_path or name ends with "-test").
+ * Used to hide test distributions on the RHAI list unless ?showTest=1 is in the URL.
+ */
+export function isTestDistribution(d: DistributionResponse): boolean {
+  const path = (d.base_path ?? "").trim();
+  const name = (d.name ?? "").trim();
+  return path.endsWith("-test") || name.toLowerCase().endsWith("-test");
+}
+
+/** Parsed dimensions from an AIPCC distribution base_path (e.g. rhoai/3.0/cuda-ubi9 → product, version, accelerator label, base image). */
+export interface AIPCCDistributionDimensions {
+  /** Product name, e.g. "rhoai", "spyre" (first segment of base_path). */
+  product: string;
+  /** Product version, e.g. "3.0", "3.2", "3.4-EA1" (second segment). */
+  productVersion: string;
+  /** Accelerator label for display/filter: "CPU", "CUDA", "CUDA 12.9", "CUDA 13.0", "ROCm", "ROCm 6.4", etc. */
+  accelerator: string;
+  /** Base image / RHEL variant, e.g. "UBI 9", or null if not detectable. */
+  baseImage: string | null;
+}
+
+/**
+ * Derive accelerator display label from the last path segment (e.g. cuda-ubi9 → "CUDA", cuda12.9-ubi9 → "CUDA 12.9").
+ */
+function getAcceleratorLabelFromLastSegment(lastSegment: string): string {
+  const part = lastSegment.split("-")[0] ?? "";
+  const lower = part.toLowerCase();
+  if (lower === "cpu") return "CPU";
+  const cudaMatch = lower.match(/^cuda(\d+\.\d+)?$/);
+  if (cudaMatch) return cudaMatch[1] ? `CUDA ${cudaMatch[1]}` : "CUDA";
+  const rocmMatch = lower.match(/^rocm(\d+\.\d+)?$/);
+  if (rocmMatch) return rocmMatch[1] ? `ROCm ${rocmMatch[1]}` : "ROCm";
+  return part ? part.charAt(0).toUpperCase() + part.slice(1) : "CPU";
+}
+
+/**
+ * Derive filterable dimensions from an AIPCC distribution's base_path (and name as fallback).
+ * base_path format: {product}/{version}/{accelerator-variant}-{base}, e.g. rhoai/3.0/cuda-ubi9, rhoai/3.2/cuda12.9-ubi9.
+ */
+export function getAIPCCDistributionDimensions(
+  d: DistributionResponse,
+): AIPCCDistributionDimensions {
+  const path = (d.base_path ?? "").trim();
+  const segments = path.split("/").filter(Boolean);
+  const product = segments[0] ?? "";
+  const productVersion = segments[1] ?? "";
+  const lastSegment = (segments[segments.length - 1] ?? "").toLowerCase();
+
+  const accelerator = getAcceleratorLabelFromLastSegment(lastSegment);
+  const baseImage = getBaseImageLabel(d);
+
+  return { product, productVersion, accelerator, baseImage };
+}
+
+/**
+ * Short human-readable description for an AIPCC distribution (e.g. for cards or table).
+ * Wheels: "Pre-built Python wheels for RHOAI 3.2 on CUDA 12.9 with UBI 9."
+ * Sdists: "Python source distributions (sdists) for RHOAI 3.0 on CPU with UBI 9."
+ */
+export function getAIPCCDistributionDescription(
+  d: DistributionResponse,
+): string {
+  const { productVersion, accelerator, baseImage } =
+    getAIPCCDistributionDimensions(d);
+  const product = "RHOAI";
+  const parts: string[] = [];
+  if (productVersion) parts.push(`${product} ${productVersion}`);
+  if (accelerator) parts.push(`on ${accelerator}`);
+  if (baseImage) parts.push(`with ${baseImage}`);
+  const suffix = parts.length === 0 ? "this distribution" : parts.join(" ");
+  if (isSdistsDistribution(d)) {
+    return `Python source distributions (sdists) for ${suffix}.`;
+  }
+  return `Pre-built Python wheels for ${suffix}.`;
+}
+
+/** True if this distribution is the sdists (source distributions) variant (name or base_path contains "sdists"). */
+export function isSdistsDistribution(d: DistributionResponse): boolean {
+  const text = `${d.name ?? ""} ${d.base_path ?? ""}`.toLowerCase();
+  return text.includes("sdists");
+}
+
 /** Derive base image label from AIPCC distribution name/base_path (e.g. ubi9 → "UBI 9"). Returns null if not detectable. */
 export function getBaseImageLabel(d: DistributionResponse): string | null {
   const text = `${d.name ?? ""} ${d.base_path ?? ""}`.toLowerCase();

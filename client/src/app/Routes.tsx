@@ -1,19 +1,27 @@
 import { lazy } from "react";
-import { createBrowserRouter, redirect, useParams, type Params } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Outlet,
+  redirect,
+  useParams,
+  type Params,
+} from "react-router-dom";
 
 import { LazyRouteElement } from "@app/components/LazyRouteElement";
 
 import App from "./App";
 import { RouteErrorBoundary } from "./components/RouteErrorBoundary";
 import { queryClient } from "./queries/config";
+import { distributionsQueryOptions } from "./queries/distributions";
 import { uniquePackageMetadataQueryOptions } from "./queries/packages";
 import { TRUSTED_LIBRARIES_BASE_PATH } from "@app/utils/distributions";
+import { getAIPCCDistributions } from "@app/utils/distributions";
 
 const Landing = lazy(() => import("./pages/landing"));
 const TrustedLibraries = lazy(() => import("./pages/trusted-libraries"));
 const RedHatAIComponents = lazy(() => import("./pages/redhat-ai-components"));
-const RedHatAIDistributionDetail = lazy(
-  () => import("./pages/redhat-ai-components/redhat-ai-distribution-detail"),
+const RedHatAISplatHandler = lazy(
+  () => import("./pages/redhat-ai-components/RedHatAISplatHandler"),
 );
 const PythonDetails = lazy(() => import("./pages/python-details"));
 const NotFound = lazy(() => import("./pages/not-found"));
@@ -82,6 +90,45 @@ const packageDetailLoader = async ({
     }),
   );
   return { package: response };
+};
+
+/** Loader for RHAI splat route: prefetch package when URL is package detail so errors are handled by route error boundary. */
+const redhatAISplatLoader = async ({
+  params,
+  request,
+}: {
+  params: Params<string>;
+  request: Request;
+}) => {
+  const splat = params["*"] ?? "";
+  const segments = splat.split("/").filter(Boolean);
+  if (segments.length <= 1) return null;
+  const distributionsData = await queryClient.ensureQueryData(
+    distributionsQueryOptions(),
+  );
+  const distributions = Array.isArray(distributionsData?.results)
+    ? distributionsData.results
+    : [];
+  const aipccDistributions = getAIPCCDistributions(distributions);
+  if (aipccDistributions.some((d) => d.base_path === splat)) return null;
+  const distributionBasePath = segments.slice(0, -1).join("/");
+  const packageName = segments[segments.length - 1];
+  const url = new URL(request.url);
+  const version = url.searchParams.get("version") ?? undefined;
+  // Prefetch only; do not throw on 404/error so the route renders and
+  // RHAIPackageDetailGate can show NotFoundEmptyState or error UI.
+  try {
+    await queryClient.prefetchQuery(
+      uniquePackageMetadataQueryOptions({
+        distributionPath: distributionBasePath,
+        packageName,
+        packageVersion: version,
+      }),
+    );
+  } catch {
+    // Leave cache in error state; gate will read it and show 404 or error.
+  }
+  return null;
 };
 
 /** Loader for Trusted Libraries package detail (path is /trusted-libraries/:pythonId, no distribution segment). */
@@ -157,32 +204,29 @@ export const AppRoutes = createBrowserRouter(
         },
         {
           path: "redhat-ai-components",
-          element: (
-            <LazyRouteElement
-              identifier="redhat-ai-components"
-              component={<RedHatAIComponents />}
-            />
-          ),
-        },
-        {
-          path: "redhat-ai-components/:distributionBasePath/:pythonId",
-          element: (
-            <LazyRouteElement
-              identifier="redhat-ai-package-detail"
-              component={<PythonDetails />}
-            />
-          ),
-          errorElement: <RouteErrorBoundary />,
-          loader: packageDetailLoader,
-        },
-        {
-          path: "redhat-ai-components/*",
-          element: (
-            <LazyRouteElement
-              identifier="redhat-ai-distribution-detail"
-              component={<RedHatAIDistributionDetail />}
-            />
-          ),
+          element: <Outlet />,
+          children: [
+            {
+              index: true,
+              element: (
+                <LazyRouteElement
+                  identifier="redhat-ai-components"
+                  component={<RedHatAIComponents />}
+                />
+              ),
+            },
+            {
+              path: "*",
+              element: (
+                <LazyRouteElement
+                  identifier="redhat-ai-splat"
+                  component={<RedHatAISplatHandler />}
+                />
+              ),
+              errorElement: <RouteErrorBoundary />,
+              loader: redhatAISplatLoader,
+            },
+          ],
         },
         {
           path: Paths.pythonDetails,

@@ -88,7 +88,11 @@ export const SearchFilterControl = <TItem, TFilterCategoryKey extends string>({
           />
         </InputGroup>
       ) : (
-        <SearchInput inputProps={{ id: "search-input" }} {...inputProps} />
+        <SearchInput
+          inputProps={{ id: "search-input" }}
+          style={category.inputStyle}
+          {...inputProps}
+        />
       )}
     </ToolbarFilter>
   );

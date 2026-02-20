@@ -104,6 +104,8 @@ export interface ISelectFilterCategory<TItem, TFilterCategoryKey extends string>
 export interface ISearchFilterCategory<TItem, TFilterCategoryKey extends string>
   extends IBasicFilterCategory<TItem, TFilterCategoryKey> {
   placeholderText: string;
+  /** Optional style for the search input (e.g. minWidth). */
+  inputStyle?: React.CSSProperties;
 }
 
 export interface IToggleFilterCategory<TItem, TFilterCategoryKey extends string>
@@ -146,6 +148,10 @@ export interface IFilterToolbarProps<TItem, TFilterCategoryKey extends string> {
   isDisabled?: boolean;
   /** Breakpoint below which filter group collapses to icon. Use "sm" to keep search bar visible (expanded) on more viewports. Default "2xl". */
   filterGroupBreakpoint?: "sm" | "md" | "lg" | "xl" | "2xl";
+  /** When false, selected values are not shown as chips in the toolbar (e.g. when chips are rendered elsewhere). Default true. */
+  showChips?: boolean;
+  /** When false, only chip groups are rendered (no dropdowns). Use below cards to show active filters with the same UI as in-toolbar chips. Default true. */
+  showFilterControls?: boolean;
 }
 
 export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
@@ -153,9 +159,12 @@ export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
   filterValues,
   setFilterValues,
   pagination,
+  endToolbarItems,
   showFiltersSideBySide = false,
   isDisabled = false,
   filterGroupBreakpoint = "2xl",
+  showChips = true,
+  showFilterControls = true,
 }: React.PropsWithChildren<
   IFilterToolbarProps<TItem, TFilterCategoryKey>
 >): React.JSX.Element | null => {
@@ -239,7 +248,7 @@ export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
         breakpoint={filterGroupBreakpoint}
         gap={showFiltersSideBySide ? { default: "gapMd" } : undefined}
       >
-        {!showFiltersSideBySide && (
+        {showFilterControls && !showFiltersSideBySide && (
           <ToolbarItem>
             <Dropdown
               toggle={(toggleRef) => (
@@ -268,14 +277,18 @@ export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
             filterValue={filterValues[category.categoryKey]}
             setFilterValue={(newValue) => setFilterValue(category, newValue)}
             showToolbarItem={
+              !showFilterControls ||
               showFiltersSideBySide ||
               currentFilterCategory?.categoryKey === category.categoryKey
             }
             isDisabled={isDisabled}
+            showChips={showChips}
+            showFilterControls={showFilterControls}
           />
         ))}
+        {endToolbarItems ?? null}
       </ToolbarToggleGroup>
-      {!showFiltersSideBySide && (
+      {showFilterControls && !showFiltersSideBySide && (
         <ToolbarGroup variant="filter-group" alignSelf="center">
           {filterCategories
             .filter((item) => item.showOutsideDropdown)
@@ -289,6 +302,8 @@ export const FilterToolbar = <TItem, TFilterCategoryKey extends string>({
                 }
                 showToolbarItem
                 isDisabled={isDisabled}
+                showChips={showChips}
+                showFilterControls={showFilterControls}
               />
             ))}
         </ToolbarGroup>

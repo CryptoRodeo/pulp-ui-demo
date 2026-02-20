@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 
 import { client } from "@app/axios-config/apiInit";
@@ -10,8 +11,14 @@ import { distributionsMock } from "./mocks/distributions.mock";
 
 export const DistributionsQueryKey = "distributions";
 
-export const useFetchDistributions = (disableQuery = false) => {
-  const { data, isLoading, error, refetch } = useQuery({
+/**
+ * Fetches all distributions. Test distributions (base_path or name ending in "-test")
+ * are filtered out on the client for the RHAI list unless the page is loaded with
+ * ?showTest=1. If the backend adds a filter (e.g. exclude_test or base_path__iendswith),
+ * we could pass it here to avoid loading test distributions.
+ */
+export const distributionsQueryOptions = () =>
+  queryOptions({
     queryKey: [DistributionsQueryKey],
     queryFn: () =>
       mockQueryFn(async () => {
@@ -23,6 +30,11 @@ export const useFetchDistributions = (disableQuery = false) => {
         });
         return response.data;
       }, distributionsMock),
+  });
+
+export const useFetchDistributions = (disableQuery = false) => {
+  const { data, isLoading, error, refetch } = useQuery({
+    ...distributionsQueryOptions(),
     enabled: !disableQuery,
   });
 

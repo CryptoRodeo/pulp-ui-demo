@@ -1,24 +1,32 @@
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Title,
-  Card,
-  CardBody,
   ClipboardCopy,
-  DescriptionList,
-  DescriptionListGroup,
-  DescriptionListTerm,
-  DescriptionListDescription,
   Label,
   EmptyState,
   EmptyStateBody,
   Flex,
   FlexItem,
+  Toolbar,
+  ToolbarContent,
+  Button,
 } from "@patternfly/react-core";
+import { Table, Thead, Tr, Th, Tbody, Td } from "@patternfly/react-table";
 import type { UniquePackageMetadataResponse } from "@app/api/models";
+import { FilterToolbar, FilterType, type FilterCategory, type IFilterValues } from "@app/components/FilterToolbar";
+import { getLocalFilterDerivedState } from "@app/hooks/table-controls/filtering";
 import prettyBytes from "pretty-bytes";
 
 type ReleaseFiles = NonNullable<UniquePackageMetadataResponse["releases"]>;
+type ReleaseFile = NonNullable<ReleaseFiles[string]>[number];
+
+const FILES_FILTER_KEYS = [
+  "packagetype",
+  "pythonVersion",
+  "requiresPython",
+] as const;
+type FilesFilterKey = (typeof FILES_FILTER_KEYS)[number];
 
 interface FilesTabProps {
   releases: ReleaseFiles;
@@ -33,6 +41,65 @@ export const FilesTab: React.FC<FilesTabProps> = ({
     return releases[currentVersion] ?? [];
   }, [releases, currentVersion]);
 
+  const uniquePackagetypes = useMemo(
+    () =>
+      [...new Set(files.map((f) => f.packagetype ?? "unknown"))].filter(Boolean).sort(),
+    [files],
+  );
+  const uniquePythonVersions = useMemo(
+    () =>
+      [...new Set(files.map((f) => f.python_version ?? "N/A"))].filter(Boolean).sort(),
+    [files],
+  );
+  const uniqueRequiresPython = useMemo(
+    () =>
+      [...new Set(files.map((f) => f.requires_python ?? ""))].filter(Boolean).sort(),
+    [files],
+  );
+
+  const filterCategories = useMemo(
+    (): FilterCategory<ReleaseFile, FilesFilterKey>[] => [
+      {
+        categoryKey: "packagetype",
+        title: "Package type",
+        type: FilterType.multiselect,
+        placeholderText: "Package type",
+        selectOptions: uniquePackagetypes.map((v) => ({ value: v, label: v })),
+        getItemValue: (item) => item.packagetype ?? "unknown",
+      },
+      {
+        categoryKey: "pythonVersion",
+        title: "Python version",
+        type: FilterType.multiselect,
+        placeholderText: "Python version",
+        selectOptions: uniquePythonVersions.map((v) => ({ value: v, label: v })),
+        getItemValue: (item) => item.python_version ?? "N/A",
+      },
+      {
+        categoryKey: "requiresPython",
+        title: "Requires Python",
+        type: FilterType.multiselect,
+        placeholderText: "Requires Python",
+        selectOptions: uniqueRequiresPython.map((v) => ({ value: v, label: v })),
+        getItemValue: (item) => item.requires_python ?? "",
+      },
+    ],
+    [uniquePackagetypes, uniquePythonVersions, uniqueRequiresPython],
+  );
+
+  const [filterValues, setFilterValues] = useState<IFilterValues<FilesFilterKey>>({});
+
+  const { filteredItems: filteredFiles } =
+    getLocalFilterDerivedState<ReleaseFile, FilesFilterKey>({
+      items: files,
+      filterCategories,
+      filterState: { filterValues },
+    });
+
+  const hasActiveFilters = Object.values(filterValues).some(
+    (v) => v && v.length > 0,
+  );
+
   if (files.length === 0) {
     return (
       <EmptyState titleText="No files found" headingLevel="h3">
@@ -45,56 +112,83 @@ export const FilesTab: React.FC<FilesTabProps> = ({
 
   return (
     <>
-      <Title headingLevel="h2" size="xl">
-        Files
-      </Title>
-      <p style={{ marginTop: "0.5rem" }}>
-        Distribution files for version {currentVersion}.
-      </p>
-      <Flex
-        direction={{ default: "column" }}
-        gap={{ default: "gapMd" }}
-        style={{ marginTop: "1.5rem" }}
-      >
-        {files.map((file) => (
-          <FlexItem key={file.digests?.sha256 ?? file.filename}>
-            <Card isCompact>
-              <CardBody>
-                <Title headingLevel="h4" size="md">
-                  {file.filename ?? "Unknown file"}
-                  <Label
-                    color={file.packagetype === "sdist" ? "orange" : "blue"}
-                    isCompact
-                    style={{ marginLeft: "0.5rem" }}
-                  >
-                    {file.packagetype ?? "unknown"}
-                  </Label>
-                </Title>
-                <DescriptionList isCompact style={{ marginTop: "1rem" }}>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>Python Version</DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {file.python_version ?? "N/A"}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  <DescriptionListGroup>
-                    <DescriptionListTerm>Size</DescriptionListTerm>
-                    <DescriptionListDescription>
-                      {prettyBytes(file.size ?? 0)}
-                    </DescriptionListDescription>
-                  </DescriptionListGroup>
-                  {file.requires_python && (
-                    <DescriptionListGroup>
-                      <DescriptionListTerm>Requires Python</DescriptionListTerm>
-                      <DescriptionListDescription>
-                        {file.requires_python}
-                      </DescriptionListDescription>
-                    </DescriptionListGroup>
-                  )}
-                  {file.digests?.sha256 && (
-                    <DescriptionListGroup>
-                      <DescriptionListTerm>SHA256</DescriptionListTerm>
-                      <DescriptionListDescription>
+      <Flex direction={{ default: "column" }} gap={{ default: "gapMd" }}>
+        <FlexItem>
+          <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }}>
+            <FlexItem>
+              <Title headingLevel="h2" size="xl">
+                Files
+              </Title>
+            </FlexItem>
+            <FlexItem>
+              <p>Distribution files for version {currentVersion}.</p>
+            </FlexItem>
+          </Flex>
+        </FlexItem>
+        <FlexItem>
+          <Toolbar customLabelGroupContent={<></>}>
+            <ToolbarContent>
+              <FilterToolbar<ReleaseFile, FilesFilterKey>
+                showFiltersSideBySide
+                filterGroupBreakpoint="lg"
+                filterCategories={filterCategories}
+                filterValues={filterValues}
+                setFilterValues={setFilterValues}
+                endToolbarItems={
+                  hasActiveFilters ? (
+                    <Button
+                      variant="link"
+                      onClick={() => setFilterValues({})}
+                      isInline
+                    >
+                      Clear all filters
+                    </Button>
+                  ) : undefined
+                }
+              />
+            </ToolbarContent>
+          </Toolbar>
+        </FlexItem>
+      </Flex>
+      {filteredFiles.length === 0 ? (
+        <EmptyState titleText="No files match filters" headingLevel="h3">
+          <EmptyStateBody>
+            No distribution files match the current filters. Clear or adjust
+            filters to see more results.
+          </EmptyStateBody>
+        </EmptyState>
+      ) : (
+        <Table
+          aria-label="Files table"
+          variant="compact"
+          style={{ marginTop: "1rem" }}
+        >
+          <Thead>
+            <Tr>
+              <Th>File</Th>
+              <Th>Package type</Th>
+              <Th>Python Version</Th>
+              <Th>Requires Python</Th>
+              <Th>Size</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {filteredFiles.map((file) => (
+              <Tr key={file.digests?.sha256 ?? file.filename ?? undefined}>
+                <Td dataLabel="File">
+                  <div>
+                    <span>{file.filename ?? "Unknown file"}</span>
+                    {file.digests?.sha256 && (
+                      <div
+                        style={{
+                          marginTop: "0.25rem",
+                          fontSize:
+                            "var(--pf-t--global--font--size--body--sm)",
+                          color: "var(--pf-v6-global--Color--200)",
+                          fontFamily:
+                            "var(--pf-v6-global--FontFamily--monospace)",
+                        }}
+                      >
                         <ClipboardCopy
                           isReadOnly
                           hoverTip="Copy"
@@ -103,15 +197,44 @@ export const FilesTab: React.FC<FilesTabProps> = ({
                         >
                           {file.digests.sha256}
                         </ClipboardCopy>
-                      </DescriptionListDescription>
-                    </DescriptionListGroup>
-                  )}
-                </DescriptionList>
-              </CardBody>
-            </Card>
-          </FlexItem>
-        ))}
-      </Flex>
+                      </div>
+                    )}
+                  </div>
+                </Td>
+                <Td dataLabel="Package type">
+                  <Label
+                    color={file.packagetype === "sdist" ? "orange" : "blue"}
+                    isCompact
+                  >
+                    {file.packagetype ?? "unknown"}
+                  </Label>
+                </Td>
+                <Td dataLabel="Python Version">
+                  <code
+                    style={{
+                      backgroundColor:
+                        "var(--pf-v6-global--BackgroundColor--200)",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      fontSize: "var(--pf-v6-global--FontSize--sm)",
+                      fontFamily:
+                        "var(--pf-v6-global--FontFamily--monospace)",
+                    }}
+                  >
+                    {file.python_version ?? "N/A"}
+                  </code>
+                </Td>
+                <Td dataLabel="Requires Python">
+                  {file.requires_python ?? "—"}
+                </Td>
+                <Td dataLabel="Size">
+                  {prettyBytes(file.size ?? 0)}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      )}
     </>
   );
 };

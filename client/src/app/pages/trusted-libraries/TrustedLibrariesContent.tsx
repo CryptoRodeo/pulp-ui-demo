@@ -32,7 +32,7 @@ export const TrustedLibrariesContent: React.FC = () => {
 
   return (
     <>
-      <DocumentMetadata title="Trusted Libraries" />
+      <DocumentMetadata title="Trusted Libraries" productName="Trusted Libraries" />
       <LoadingWrapper
         isFetching={isFetching}
         fetchError={fetchError}

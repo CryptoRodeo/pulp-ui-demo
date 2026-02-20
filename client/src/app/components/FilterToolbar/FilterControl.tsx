@@ -24,6 +24,10 @@ export interface IFilterControlProps<TItem, TFilterCategoryKey extends string> {
   setFilterValue: (newValue: FilterValue) => void;
   showToolbarItem: boolean;
   isDisabled?: boolean;
+  /** When false, do not show selected values as chips. Default true. */
+  showChips?: boolean;
+  /** When false, only render chip group (no dropdown). Default true. */
+  showFilterControls?: boolean;
 }
 
 export const FilterControl = <TItem, TFilterCategoryKey extends string>({
