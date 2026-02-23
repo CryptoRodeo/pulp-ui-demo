@@ -10,6 +10,8 @@ import Markdown from "react-markdown";
 import type { UniquePackageMetadataResponse } from "@app/api/models";
 import { MetadataSidebar } from "./metadata-sidebar";
 
+import "./overview-tab.css";
+
 interface OverviewTabProps {
   info: NonNullable<UniquePackageMetadataResponse["info"]>;
 }
@@ -25,7 +27,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ info }) => {
           About
         </Title>
         <Content isEditorial style={{ marginTop: "0.5rem" }}>
-          <Markdown>{description}</Markdown>
+          <div className="overview-markdown">
+            <Markdown>{description}</Markdown>
+          </div>
         </Content>
 
         {/* Installation section */}

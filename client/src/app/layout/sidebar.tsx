@@ -2,6 +2,7 @@ import type React from "react";
 import { NavLink } from "react-router-dom";
 
 import { Paths } from "@app/Routes";
+import { REPOSITORY_ENTRIES } from "@app/repositories";
 import {
   Nav,
   NavList,
@@ -21,14 +22,27 @@ export const SidebarApp: React.FC = () => {
         <NavList>
           <li className={nav.navItem}>
             <NavLink
-              to={Paths.python}
+              to={Paths.landing}
+              end
               className={({ isActive }) => {
                 return css(LINK_CLASS, isActive ? ACTIVE_LINK_CLASS : "");
               }}
             >
-              Python
+              Home
             </NavLink>
           </li>
+          {REPOSITORY_ENTRIES.map((repo) => (
+            <li key={repo.path} className={nav.navItem}>
+              <NavLink
+                to={repo.path}
+                className={({ isActive }) => {
+                  return css(LINK_CLASS, isActive ? ACTIVE_LINK_CLASS : "");
+                }}
+              >
+                {repo.label}
+              </NavLink>
+            </li>
+          ))}
         </NavList>
       </Nav>
     );

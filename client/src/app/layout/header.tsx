@@ -1,4 +1,5 @@
 import React, { useReducer, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 import {
   Brand,
@@ -11,13 +12,8 @@ import {
   MastheadContent,
   MastheadLogo,
   MastheadMain,
-  MastheadToggle,
   MenuToggle,
   type MenuToggleElement,
-  PageToggleButton,
-  Split,
-  SplitItem,
-  Title,
   Toolbar,
   ToolbarContent,
   ToolbarGroup,
@@ -26,20 +22,55 @@ import {
 
 import EllipsisVIcon from "@patternfly/react-icons/dist/esm/icons/ellipsis-v-icon";
 import HelpIcon from "@patternfly/react-icons/dist/esm/icons/help-icon";
-import BarsIcon from "@patternfly/react-icons/dist/js/icons/bars-icon";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/js/icons/external-link-alt-icon";
 
 import { ThemeSelector } from "@app/components/ThemeSelector";
 import useBranding from "@app/hooks/useBranding";
 import { ThemeContext } from "@app/components/ThemeContext";
 
+import { REPOSITORY_ENTRIES } from "@app/repositories";
+
 import { AboutApp } from "./about";
+import "./header.css";
+
+const BASE = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+
+const sectionLogoByPath: Record<
+  string,
+  { src: string; alt: string; height: string; to: string }
+> = {
+  "/": {
+    src: `${BASE}/images/packages.svg`,
+    alt: "Packages",
+    height: "44px",
+    to: "/",
+  },
+  ...Object.fromEntries(
+    REPOSITORY_ENTRIES.map((repo) => [
+      repo.path,
+      {
+        src: `${BASE}/images/${repo.imageName}`,
+        alt: repo.label,
+        height: "44px",
+        to: repo.path,
+      },
+    ]),
+  ),
+};
+
+function getSectionKey(pathname: string): string {
+  const match = REPOSITORY_ENTRIES.find((repo) => pathname.startsWith(repo.path));
+  return match ? match.path : "/";
+}
 
 export const HeaderApp: React.FC = () => {
   const { isDark } = React.useContext(ThemeContext);
+  const location = useLocation();
+  const sectionKey = getSectionKey(location.pathname);
+  const sectionLogo = sectionLogoByPath[sectionKey] ?? sectionLogoByPath["/"];
 
   const {
-    masthead: { leftBrand, leftTitle, rightBrand, supportUrl },
+    masthead: { rightBrand, supportUrl },
   } = useBranding();
 
   const [isAboutModalOpen, toggleIsAboutModalOpen] = useReducer(
@@ -63,38 +94,15 @@ export const HeaderApp: React.FC = () => {
 
       <Masthead>
         <MastheadMain>
-          <MastheadToggle>
-            <PageToggleButton variant="plain" aria-label="Global navigation">
-              <BarsIcon />
-            </PageToggleButton>
-          </MastheadToggle>
-          <MastheadBrand>
-            <MastheadLogo>
-              <Split hasGutter>
-                <SplitItem>
-                  {leftBrand ? (
-                    <Brand
-                      src={
-                        (!isDark ? leftBrand.src : leftBrand.darkModeSrc) ??
-                        leftBrand.src
-                      }
-                      alt={leftBrand.alt}
-                      heights={{ default: leftBrand.height }}
-                    />
-                  ) : null}
-                </SplitItem>
-                <SplitItem isFilled>
-                  {leftTitle ? (
-                    <Title
-                      className="logo-pointer"
-                      headingLevel={leftTitle?.heading ?? "h1"}
-                      size={leftTitle?.size ?? "2xl"}
-                    >
-                      {leftTitle.text}
-                    </Title>
-                  ) : null}
-                </SplitItem>
-              </Split>
+          <MastheadBrand className="header-masthead-brand">
+            <MastheadLogo component={(props) => <Link {...props} to={sectionLogo.to} />}>
+              <span className="header-section-logo">
+                <Brand
+                  src={sectionLogo.src}
+                  alt={sectionLogo.alt}
+                  heights={{ default: sectionLogo.height }}
+                />
+              </span>
             </MastheadLogo>
           </MastheadBrand>
         </MastheadMain>

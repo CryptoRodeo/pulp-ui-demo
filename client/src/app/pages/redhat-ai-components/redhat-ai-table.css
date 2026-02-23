@@ -1,0 +1,6 @@
+/* Prevent sortable column headers from truncating so "Product version", "Accelerator", "RHEL version" show in full */
+.rhai-indexes-table thead th {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  max-width: none !important;
+}

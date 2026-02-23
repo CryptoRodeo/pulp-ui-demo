@@ -10,6 +10,9 @@ export const DEFAULT_REFETCH_INTERVAL = 5000;
 
 export const PULP_DOMAIN = ENV.PULP_DOMAIN ?? "default";
 
+/** Base path for the single "Trusted Libraries" (calunga-dev) distribution */
+export const CALUNGA_DEV_BASE_PATH = "calunga-dev";
+
 export const TablePersistenceKeyPrefixes = {
   python_wheels: "pw",
 };

@@ -113,6 +113,8 @@ export const uniquePackageMetadataQueryOptions = (args: {
     ? `${packageName}/json`
     : `${packageName}/${packageVersion}/json`;
 
+  // Use distribution path as-is (with slashes). Matches apiPypiSimpleRead which
+  // passes path with slashes for RHAI base_paths like rhoai/3.0/cuda-ubi9-test.
   return queryOptions({
     queryKey: [
       PackageMetadataQueryKey,
