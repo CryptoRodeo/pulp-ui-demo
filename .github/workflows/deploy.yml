@@ -35,6 +35,8 @@ jobs:
         run: npm ci
       - name: Build
         run: NODE_ENV=development BASE_URL=/pulp-ui-demo/ MOCK=on npm run build
+      - name: Copy index.html to 404.html for SPA routing
+        run: cp ./client/dist/index.html ./client/dist/404.html
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
